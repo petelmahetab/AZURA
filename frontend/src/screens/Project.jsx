@@ -72,6 +72,11 @@ const Project = () => {
     }
 
     const send = () => {
+        if (!message.trim()) {
+           // console.log("Cannot send an empty message");
+            return;
+        }
+
         const timestamp = new Date().toLocaleTimeString();
         const messageData = {
             message,
@@ -103,7 +108,6 @@ const Project = () => {
         const socket = initializeSocket(project._id);
         console.log(`${user.email} initialized socket for ${project._id}`);
 
-        // Toast notifications for connection status
         socket.on('connect', () => {
             console.log(`${user.email} connected`);
             toast.success(`${user.email} connected`, { toastId: `connect-${user._id}` });
@@ -117,7 +121,6 @@ const Project = () => {
             toast.warn(`${user.email} disconnected`, { toastId: `disconnect-${user._id}` });
         });
 
-        // Handle chat messages
         receiveMessage('project-message', data => {
             console.log(`${user.email} received:`, data);
             setMessages(prevMessages => {
@@ -151,7 +154,6 @@ const Project = () => {
             console.log(err);
         });
 
-        // Cleanup
         return () => {
             socket.off('connect');
             socket.off('connect_error');
@@ -184,7 +186,7 @@ const Project = () => {
 
     return (
         <main className='h-screen w-screen flex'>
-            <section className="left relative flex flex-col h-screen min-w-96 bg-slate-300">
+            <section className="left relative flex flex-col h-screen min-w-[30%] bg-slate-300">
                 <header className='flex justify-between items-center p-2 px-4 w-full bg-slate-100 absolute z-10 top-0'>
                     <button className='flex gap-2' onClick={() => setIsModalOpen(true)}>
                         <i className="ri-add-fill mr-1"></i>
@@ -215,10 +217,16 @@ const Project = () => {
                         <input
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
-                            className='p-2 px-4 border-none outline-none flex-grow' type="text" placeholder='Enter message' />
+                            className='p-2 px-4 border-none outline-none flex-grow' 
+                            type="text" 
+                            placeholder='Enter message' 
+                        />
                         <button
                             onClick={send}
-                            className='px-5 bg-slate-950 rounded-md text-white'><i className="ri-send-plane-fill"></i></button>
+                            disabled={!message.trim()} // Disable button if message is empty
+                            className={`px-5 bg-slate-950 rounded-md text-white ${!message.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                            <i className="ri-send-plane-fill"></i>
+                        </button>
                     </div>
                 </div>
                 <div className={`sidePanel w-full h-full flex flex-col gap-2 bg-slate-50 absolute transition-all ${isSidePanelOpen ? 'translate-x-0' : '-translate-x-full'} top-0`}>
