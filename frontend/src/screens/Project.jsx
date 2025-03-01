@@ -73,7 +73,7 @@ const Project = () => {
 
     const send = () => {
         if (!message.trim()) {
-           // console.log("Cannot send an empty message");
+            // console.log("Cannot send an empty message");
             return;
         }
 
@@ -81,33 +81,46 @@ const Project = () => {
         const messageData = {
             message,
             sender: user,
-            timestamp 
+            timestamp
         };
         sendMessage('project-message', messageData);
         setMessages(prevMessages => [...prevMessages, messageData]);
         setMessage("");
     };
-
     function WriteAiMessage(message) {
-        const messageObject = JSON.parse(message);
+        let messageText = '';
+        try {
+            const messageObject = JSON.parse(message);
+            messageText = messageObject.text || '';
+            if (messageObject.fileTree && typeof messageObject.fileTree === 'object') {
+                messageText += '\n\n';
+                Object.entries(messageObject.fileTree).forEach(([fileName, fileData]) => {
+                    const fileContents = fileData.file.contents;
+                    messageText += `### ${fileName}\n\`\`\`javascript\n${fileContents}\n\`\`\`\n\n\n`;
+                });
+            }
+        } catch (e) {
+            console.warn("Failed to parse AI message as JSON, treating as plain text:", message);
+            messageText = message;
+        }
         return (
-            <div className='overflow-auto bg-slate-950 text-white rounded-sm p-2'>
+            <div className="overflow-auto bg-slate-950 text-white rounded-sm p-2 max-w-full">
                 <Markdown
-                    children={messageObject.text}
                     options={{
                         overrides: {
-                            code: SyntaxHighlightedCode,
+                            code: { component: SyntaxHighlightedCode },
                         },
                     }}
-                />
+                >
+                    {messageText}
+                </Markdown>
             </div>
         );
     }
-
     useEffect(() => {
         const socket = initializeSocket(project._id);
         console.log(`${user.email} initialized socket for ${project._id}`);
-
+    
         socket.on('connect', () => {
             console.log(`${user.email} connected`);
             toast.success(`${user.email} connected`, { toastId: `connect-${user._id}` });
@@ -120,9 +133,9 @@ const Project = () => {
             console.log(`${user.email} disconnected`);
             toast.warn(`${user.email} disconnected`, { toastId: `disconnect-${user._id}` });
         });
-
+    
         receiveMessage('project-message', data => {
-            console.log(`${user.email} received:`, data);
+            console.log('Raw socket data received:', data); // Debug raw data
             setMessages(prevMessages => {
                 const exists = prevMessages.some(
                     msg => msg.sender._id === data.sender._id && msg.message === data.message
@@ -135,25 +148,25 @@ const Project = () => {
                 return prevMessages;
             });
         });
-
+    
         if (!webContainer) {
             getWebContainer().then(container => {
                 setWebContainer(container);
                 console.log("container started");
             });
         }
-
+    
         axios.get(`/projects/get-project/${project._id}`).then(res => {
             setProject(res.data.project);
             setFileTree(res.data.project.fileTree || {});
         });
-
+    
         axios.get('/users/all').then(res => {
             setUsers(res.data.users);
         }).catch(err => {
             console.log(err);
         });
-
+    
         return () => {
             socket.off('connect');
             socket.off('connect_error');
@@ -184,6 +197,12 @@ const Project = () => {
         messageBox.current.scrollTop = messageBox.current.scrollHeight;
     }
 
+    function appendIncomingMessage(messageObject) {
+
+        messageBox.appendChild(message);
+        scrollToBottom();
+    }
+
     return (
         <main className='h-screen w-screen flex'>
             <section className="left relative flex flex-col h-screen min-w-[30%] bg-slate-300">
@@ -199,27 +218,37 @@ const Project = () => {
                 <div className="conversation-area pt-14 pb-10 flex-grow flex flex-col h-full relative">
                     <div
                         ref={messageBox}
-                        className="message-box p-1 flex-grow flex flex-col gap-1 overflow-auto max-h-full scrollbar-hide">
+                        className="message-box p-4 flex-grow flex flex-col gap-4 overflow-auto max-h-full scrollbar-thin scrollbar-thumb-slate-400 scrollbar-track-slate-200"
+                    >
                         {messages.map((msg, index) => (
-                            <div key={index} className={`${msg.sender._id === 'ai' ? 'max-w-80' : 'max-w-52'} ${msg.sender._id == user._id.toString() && 'ml-auto'}  message flex flex-col p-2 bg-slate-50 w-fit rounded-md`}>
-                                <small className='opacity-65 text-xs'>{msg.sender.email}</small>
-                                <div className='text-sm relative'>
+                            <div
+                                key={index}
+                                className={`${msg.sender._id === 'ai' ? 'max-w-[90%]' : 'max-w-52'} ${msg.sender._id === user._id.toString() && 'ml-auto'
+                                    } message flex flex-col p-3 rounded-lg shadow-sm ${msg.sender._id === 'ai' ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'
+                                    }`}
+                            >
+                                <small className="opacity-70 text-xs mb-1">{msg.sender.email}</small>
+                                <div className="text-sm relative">
                                     {msg.sender._id === 'ai' ? (
                                         WriteAiMessage(msg.message)
                                     ) : (
-                                        <p>{msg.message} <span className="text-xs opacity-50 bottom-0 right-0 absolute">{msg.timestamp}</span></p>
+                                        <p>
+                                            {msg.message}{' '}
+                                            <span className="text-xs opacity-50 bottom-0 right-0 absolute">{msg.timestamp}</span>
+                                        </p>
                                     )}
                                 </div>
                             </div>
                         ))}
                     </div>
+
                     <div className="inputField w-full flex absolute bottom-0 gap-2">
                         <input
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
-                            className='p-2 px-4 border-none outline-none flex-grow' 
-                            type="text" 
-                            placeholder='Enter message' 
+                            className='p-2 px-4 border-none outline-none flex-grow'
+                            type="text"
+                            placeholder='Enter message'
                         />
                         <button
                             onClick={send}
@@ -259,6 +288,8 @@ const Project = () => {
                     </div>
                 </div>
             </section>
+
+
             <section className="right bg-red-50 flex-grow h-full flex">
                 <div className="explorer h-full max-w-64 min-w-52 bg-slate-200">
                     <div className="file-tree w-full">
@@ -275,6 +306,9 @@ const Project = () => {
                         ))}
                     </div>
                 </div>
+
+
+                {/* Code Editor */}
                 <div className="code-editor flex flex-col flex-grow h-full shrink">
                     <div className="top flex justify-between w-full">
                         <div className="files flex">

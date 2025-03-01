@@ -74,28 +74,24 @@ io.on('connection', socket => {
     //     message: `${socket.user.email || socket.user.id} has joined the room`,
     //     sender: { _id: 'system', email: 'System' }
     // });
-
     socket.on('project-message', async data => {
         const message = data.message;
         const aiIsPresentInMessage = message.includes('@ai');
-
+    
         console.log(`Received from ${socket.user.email || socket.user.id} in room ${socket.roomId}:`, data);
-        const clientsInRoom = io.sockets.adapter.rooms.get(socket.roomId);
-        console.log(`Clients in room ${socket.roomId}:`, clientsInRoom ? Array.from(clientsInRoom) : 'none');
         io.to(socket.roomId).emit('project-message', data);
-        console.log(`Broadcasted to room ${socket.roomId}:`, data);
-
+    
         if (aiIsPresentInMessage) {
-            const prompt = message.replace('@ai', '');
+            const prompt = message.replace('@ai', '').trim();
             const result = await generateResult(prompt);
-            console.log(`AI response to room ${socket.roomId}:`, result);
+            console.log(`AI response before sending to room ${socket.roomId}:`, JSON.stringify(result, null, 2)); // Detailed log
             io.to(socket.roomId).emit('project-message', {
-                message: result,
+                message: JSON.stringify(result),
                 sender: { _id: 'ai', email: 'AI' }
             });
         }
     });
-
+    
     socket.on('disconnect', () => {
         console.log(`User ${socket.user.id} (email: ${socket.user.email || 'unknown'}) disconnected from room: ${socket.roomId}`);
         socket.leave(socket.roomId);
