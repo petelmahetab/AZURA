@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { UserContext } from '../context/user.context';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import axios from '../config/axios';
 import { initializeSocket, receiveMessage, sendMessage } from '../config/socket';
 import Markdown from 'markdown-to-jsx';
@@ -8,6 +8,7 @@ import hljs from 'highlight.js';
 import { getWebContainer } from '../config/webcontainer';
 import { toast } from 'react-toastify';
 
+// SyntaxHighlightedCode component for code block highlighting
 function SyntaxHighlightedCode(props) {
     const ref = useRef(null);
 
@@ -20,6 +21,24 @@ function SyntaxHighlightedCode(props) {
 
     return <code {...props} ref={ref} />;
 }
+
+const getLanguageFromFileName = (fileName) => {
+    const extension = fileName.split('.').pop().toLowerCase();
+    switch (extension) {
+        case 'js':
+            return 'javascript';
+        case 'java':
+            return 'java';
+        case 'py':
+            return 'python';
+        case 'c':
+            return 'c';
+        case 'go':
+            return 'go';
+        default:
+            return 'plaintext';
+    }
+};
 
 const Project = () => {
     const location = useLocation();
@@ -71,9 +90,9 @@ const Project = () => {
             });
     }
 
+    
     const send = () => {
         if (!message.trim()) {
-            // console.log("Cannot send an empty message");
             return;
         }
 
@@ -83,44 +102,62 @@ const Project = () => {
             sender: user,
             timestamp
         };
+
         sendMessage('project-message', messageData);
         setMessages(prevMessages => [...prevMessages, messageData]);
         setMessage("");
     };
+
+    // Updated WriteAiMessage to handle plain text directly
     function WriteAiMessage(message) {
-        let messageText = '';
-        try {
-            const messageObject = JSON.parse(message);
-            messageText = messageObject.text || '';
-            if (messageObject.fileTree && typeof messageObject.fileTree === 'object') {
-                messageText += '\n\n';
-                Object.entries(messageObject.fileTree).forEach(([fileName, fileData]) => {
-                    const fileContents = fileData.file.contents;
-                    messageText += `### ${fileName}\n\`\`\`javascript\n${fileContents}\n\`\`\`\n\n\n`;
-                });
-            }
-        } catch (e) {
-            console.warn("Failed to parse AI message as JSON, treating as plain text:", message);
-            messageText = message;
+        if (typeof message === 'object' && message.text && message.fileTree) {
+            const { text, fileTree } = message;
+            return (
+                <div className="overflow-auto bg-slate-950 text-white rounded-sm p-2 max-w-full">
+                    <Markdown
+                        options={{
+                            overrides: {
+                                code: { component: SyntaxHighlightedCode },
+                            },
+                        }}
+                    >
+                        {text}
+                    </Markdown>
+                    {Object.keys(fileTree).map((fileName, index) => {
+                        const { contents } = fileTree[fileName].file;
+                        const language = getLanguageFromFileName(fileName);
+                        return (
+                            <div key={index} className="mt-4">
+                                <h3 className="text-white mb-2">{fileName}</h3>
+                                <pre>
+                                    <code className={'lang-' + language} dangerouslySetInnerHTML={{ __html: hljs.highlight(language, contents).value }} />
+                                </pre>
+                            </div>
+                        );
+                    })}
+                </div>
+            );
+        } else {
+            return (
+                <div className="overflow-auto bg-slate-950 text-white rounded-sm p-2 max-w-full">
+                    <Markdown
+                        options={{
+                            overrides: {
+                                code: { component: SyntaxHighlightedCode },
+                            },
+                        }}
+                    >
+                        {message}
+                    </Markdown>
+                </div>
+            );
         }
-        return (
-            <div className="overflow-auto bg-slate-950 text-white rounded-sm p-2 max-w-full">
-                <Markdown
-                    options={{
-                        overrides: {
-                            code: { component: SyntaxHighlightedCode },
-                        },
-                    }}
-                >
-                    {messageText}
-                </Markdown>
-            </div>
-        );
     }
+
     useEffect(() => {
         const socket = initializeSocket(project._id);
-        console.log(`${user.email} initialized socket for ${project._id}`);
-    
+        //console.log(`${user.email} initialized socket for ${project._id}`);
+
         socket.on('connect', () => {
             console.log(`${user.email} connected`);
             toast.success(`${user.email} connected`, { toastId: `connect-${user._id}` });
@@ -133,49 +170,78 @@ const Project = () => {
             console.log(`${user.email} disconnected`);
             toast.warn(`${user.email} disconnected`, { toastId: `disconnect-${user._id}` });
         });
-    
         receiveMessage('project-message', data => {
-            console.log('Raw socket data received:', data); // Debug raw data
+            console.log('Raw socket data received:', data);
             setMessages(prevMessages => {
                 const exists = prevMessages.some(
-                    msg => msg.sender._id === data.sender._id && msg.message === data.message
+                    msg => msg.sender._id === data.sender._id &&
+                        msg.message === data.message &&
+                        msg.timestamp === data.timestamp
                 );
                 if (!exists) {
                     console.log(`${user.email} adding:`, data);
+                    console.log('Raw data.message:', data.message);
+                    if (data.sender._id === 'ai') {
+                        let parsedMessage;
+                        try {
+                            let parsed = JSON.parse(data.message);
+                            if (typeof parsed === 'string') {
+                                parsed = JSON.parse(parsed); // Handle double-encoding
+                            }
+                            console.log('Parsed object:', parsed);
+                            // Store the entire parsed object if it has both text and fileTree
+                            if (typeof parsed === 'object' && parsed !== null && 'text' in parsed && 'fileTree' in parsed) {
+                                parsedMessage = parsed;
+                            } else {
+                                console.warn('Invalid AI response format:', parsed);
+                                parsedMessage = 'Error: Invalid AI response format';
+                            }
+                            console.log('Parsed AI message:', parsedMessage);
+                        } catch (error) {
+                            console.error('Failed to parse AI message:', error);
+                            parsedMessage = 'Error: Invalid AI response';
+                        }
+                        return [...prevMessages, {
+                            ...data,
+                            message: parsedMessage
+                        }];
+                    }
                     return [...prevMessages, { ...data }];
                 }
                 console.log(`${user.email} skipped as duplicate:`, data);
                 return prevMessages;
             });
         });
-    
+
+
         if (!webContainer) {
             getWebContainer().then(container => {
                 setWebContainer(container);
                 console.log("container started");
             });
         }
-    
+
         axios.get(`/projects/get-project/${project._id}`).then(res => {
             setProject(res.data.project);
             setFileTree(res.data.project.fileTree || {});
         });
-    
+
         axios.get('/users/all').then(res => {
             setUsers(res.data.users);
         }).catch(err => {
             console.log(err);
         });
-    
+
         return () => {
             socket.off('connect');
             socket.off('connect_error');
             socket.off('disconnect');
+            socket.off('project-message');
         };
     }, [project._id, user.email, user._id]);
 
     useEffect(() => {
-        console.log(`${user.email}’s current messages:`, messages);
+        //console.log(`${user.email}’s current messages:`, messages);
     }, [messages, user.email]);
 
     useEffect(() => {
@@ -194,18 +260,14 @@ const Project = () => {
     }
 
     function scrollToBottom() {
-        messageBox.current.scrollTop = messageBox.current.scrollHeight;
-    }
-
-    function appendIncomingMessage(messageObject) {
-
-        messageBox.appendChild(message);
-        scrollToBottom();
+        if (messageBox.current) {
+            messageBox.current.scrollTop = messageBox.current.scrollHeight;
+        }
     }
 
     return (
-        <main className='h-screen w-screen flex'>
-            <section className="left relative flex flex-col h-screen min-w-[30%] bg-slate-300">
+        <main className='h-screen w-full flex'>
+            <section className="left relative flex flex-col h-screen min-w-[30%] max-w-[35%] bg-slate-300 flex-shrink-0">
                 <header className='flex justify-between items-center p-2 px-4 w-full bg-slate-100 absolute z-10 top-0'>
                     <button className='flex gap-2' onClick={() => setIsModalOpen(true)}>
                         <i className="ri-add-fill mr-1"></i>
@@ -228,35 +290,53 @@ const Project = () => {
                                     }`}
                             >
                                 <small className="opacity-70 text-xs mb-1">{msg.sender.email}</small>
-                                <div className="text-sm relative">
+                                <div className="text-sm relative min-h-[1.5rem] flex items-center gap-2">
                                     {msg.sender._id === 'ai' ? (
                                         WriteAiMessage(msg.message)
                                     ) : (
-                                        <p>
-                                            {msg.message}{' '}
-                                            <span className="text-xs opacity-50 bottom-0 right-0 absolute">{msg.timestamp}</span>
-                                        </p>
+                                        <div className="flex flex-col flex-grow">
+                                            <p className="break-words pr-16">
+                                                {msg.message}
+                                            </p>
+                                            <span className="text-xs opacity-50 mt-1 self-end">
+                                                {msg.timestamp}
+                                            </span>
+                                        </div>
                                     )}
+                                    <button
+                                        onClick={() => navigator.clipboard.writeText(msg.message)}
+                                        className="p-1 text-white bg-slate-700 rounded-full hover:bg-slate-600">
+                                        <i className="ri-file-copy-line"></i>
+                                    </button>
                                 </div>
                             </div>
                         ))}
                     </div>
 
-                    <div className="inputField w-full flex absolute bottom-0 gap-2">
+
+
+                    <div className="inputField w-full flex absolute bottom-0 gap-2 p-2">
                         <input
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && send()}
                             className='p-2 px-4 border-none outline-none flex-grow'
                             type="text"
-                            placeholder='Enter message'
+                            placeholder='Enter message (@ai for AI response)'
                         />
                         <button
                             onClick={send}
-                            disabled={!message.trim()} // Disable button if message is empty
+                            disabled={!message.trim()}
                             className={`px-5 bg-slate-950 rounded-md text-white ${!message.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}>
                             <i className="ri-send-plane-fill"></i>
                         </button>
+                        {/* <button
+                            onClick={() => navigator.clipboard.writeText(message)}
+                            className="px-5 bg-slate-950 rounded-md text-white">
+                            <i className="ri-file-copy-line"></i>
+                        </button> */}
                     </div>
+
                 </div>
                 <div className={`sidePanel w-full h-full flex flex-col gap-2 bg-slate-50 absolute transition-all ${isSidePanelOpen ? 'translate-x-0' : '-translate-x-full'} top-0`}>
                     <header className='flex justify-between items-center px-4 p-2 bg-slate-200'>
@@ -289,7 +369,6 @@ const Project = () => {
                 </div>
             </section>
 
-
             <section className="right bg-red-50 flex-grow h-full flex">
                 <div className="explorer h-full max-w-64 min-w-52 bg-slate-200">
                     <div className="file-tree w-full">
@@ -307,8 +386,6 @@ const Project = () => {
                     </div>
                 </div>
 
-
-                {/* Code Editor */}
                 <div className="code-editor flex flex-col flex-grow h-full shrink">
                     <div className="top flex justify-between w-full">
                         <div className="files flex">

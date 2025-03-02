@@ -4,12 +4,10 @@ let socketInstance;
 
 export const initializeSocket = (projectId) => {
     let apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
-    // if (!import.meta.env.VITE_API_URL) {
-    //     console.error('VITE_API_URL undefined, using fallback: http://localhost:4000');
-    // }
+    
 
     if (socketInstance && socketInstance.connected) {
-        console.log(`Reusing socket for project: ${projectId}`);
+       // console.log(`Reusing socket for project: ${projectId}`);
         return socketInstance;
     }
 
