@@ -90,7 +90,6 @@ const Project = () => {
             });
     }
 
-    
     const send = () => {
         if (!message.trim()) {
             return;
@@ -108,9 +107,26 @@ const Project = () => {
         setMessage("");
     };
 
-    // Updated WriteAiMessage to handle plain text directly
+    // New function to send message to AI
+    const sendToAI = () => {
+        if (!message.trim()) {
+            return;
+        }
+        const aiMessage = message.startsWith('@ai') ? message : `@ai ${message}`;
+        const timestamp = new Date().toLocaleTimeString();
+        const messageData = {
+            message: aiMessage,
+            sender: user,
+            timestamp
+        };
+
+        sendMessage('project-message', messageData);
+        setMessages(prevMessages => [...prevMessages, messageData]);
+        setMessage("");
+    };
+
     function WriteAiMessage(message) {
-        if (typeof message === 'object' && message.text && message.fileTree) {
+        if (typeof message === 'object' && message.text) {
             const { text, fileTree } = message;
             return (
                 <div className="overflow-auto bg-slate-950 text-white rounded-sm p-2 max-w-full">
@@ -123,18 +139,20 @@ const Project = () => {
                     >
                         {text}
                     </Markdown>
-                    {Object.keys(fileTree).map((fileName, index) => {
-                        const { contents } = fileTree[fileName].file;
-                        const language = getLanguageFromFileName(fileName);
-                        return (
-                            <div key={index} className="mt-4">
-                                <h3 className="text-white mb-2">{fileName}</h3>
-                                <pre>
-                                    <code className={'lang-' + language} dangerouslySetInnerHTML={{ __html: hljs.highlight(language, contents).value }} />
-                                </pre>
-                            </div>
-                        );
-                    })}
+                    {fileTree && Object.keys(fileTree).length > 0 && (
+                        Object.keys(fileTree).map((fileName, index) => {
+                            const { contents } = fileTree[fileName].file;
+                            const language = getLanguageFromFileName(fileName);
+                            return (
+                                <div key={index} className="mt-4">
+                                    <h3 className="text-white mb-2">{fileName}</h3>
+                                    <pre>
+                                        <code className={'lang-' + language} dangerouslySetInnerHTML={{ __html: hljs.highlight(language, contents).value }} />
+                                    </pre>
+                                </div>
+                            );
+                        })
+                    )}
                 </div>
             );
         } else {
@@ -147,7 +165,7 @@ const Project = () => {
                             },
                         }}
                     >
-                        {message}
+                        {typeof message === 'string' ? message : 'Error: Unexpected message format'}
                     </Markdown>
                 </div>
             );
@@ -156,7 +174,6 @@ const Project = () => {
 
     useEffect(() => {
         const socket = initializeSocket(project._id);
-        //console.log(`${user.email} initialized socket for ${project._id}`);
 
         socket.on('connect', () => {
             console.log(`${user.email} connected`);
@@ -175,8 +192,8 @@ const Project = () => {
             setMessages(prevMessages => {
                 const exists = prevMessages.some(
                     msg => msg.sender._id === data.sender._id &&
-                        msg.message === data.message &&
-                        msg.timestamp === data.timestamp
+                           msg.message === data.message &&
+                           msg.timestamp === data.timestamp
                 );
                 if (!exists) {
                     console.log(`${user.email} adding:`, data);
@@ -184,21 +201,22 @@ const Project = () => {
                     if (data.sender._id === 'ai') {
                         let parsedMessage;
                         try {
+                            console.log('Attempting to parse:', data.message);
                             let parsed = JSON.parse(data.message);
                             if (typeof parsed === 'string') {
-                                parsed = JSON.parse(parsed); // Handle double-encoding
+                                console.log('Double-stringified detected, parsing again:', parsed);
+                                parsed = JSON.parse(parsed);
                             }
                             console.log('Parsed object:', parsed);
-                            // Store the entire parsed object if it has both text and fileTree
-                            if (typeof parsed === 'object' && parsed !== null && 'text' in parsed && 'fileTree' in parsed) {
+                            if (typeof parsed === 'object' && parsed !== null && 'text' in parsed) {
                                 parsedMessage = parsed;
                             } else {
-                                console.warn('Invalid AI response format:', parsed);
+                                console.warn('Invalid AI response format (missing required fields):', parsed);
                                 parsedMessage = 'Error: Invalid AI response format';
                             }
                             console.log('Parsed AI message:', parsedMessage);
                         } catch (error) {
-                            console.error('Failed to parse AI message:', error);
+                            console.error('Failed to parse AI message:', error, 'Raw message:', data.message);
                             parsedMessage = 'Error: Invalid AI response';
                         }
                         return [...prevMessages, {
@@ -212,7 +230,6 @@ const Project = () => {
                 return prevMessages;
             });
         });
-
 
         if (!webContainer) {
             getWebContainer().then(container => {
@@ -239,10 +256,6 @@ const Project = () => {
             socket.off('project-message');
         };
     }, [project._id, user.email, user._id]);
-
-    useEffect(() => {
-        //console.log(`${user.email}’s current messages:`, messages);
-    }, [messages, user.email]);
 
     useEffect(() => {
         scrollToBottom();
@@ -313,30 +326,34 @@ const Project = () => {
                         ))}
                     </div>
 
-
-
-                    <div className="inputField w-full flex absolute bottom-0 gap-2 p-2">
-                        <input
-                            value={message}
-                            onChange={(e) => setMessage(e.target.value)}
-                            onKeyPress={(e) => e.key === 'Enter' && send()}
-                            className='p-2 px-4 border-none outline-none flex-grow'
-                            type="text"
-                            placeholder='Enter message (@ai for AI response)'
-                        />
-                        <button
-                            onClick={send}
-                            disabled={!message.trim()}
-                            className={`px-5 bg-slate-950 rounded-md text-white ${!message.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                            <i className="ri-send-plane-fill"></i>
-                        </button>
-                        {/* <button
-                            onClick={() => navigator.clipboard.writeText(message)}
-                            className="px-5 bg-slate-950 rounded-md text-white">
-                            <i className="ri-file-copy-line"></i>
-                        </button> */}
+                    <div className="inputField w-full flex absolute bottom-0 gap-2 p-2 flex-col">
+                        <div className="flex justify-end">
+                            <button
+                                onClick={sendToAI}
+                                disabled={!message.trim()}
+                                className={`p-2 bg-slate-950 rounded-md text-white ${!message.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                title="Send to AI"
+                            >
+                                <i className="ri-robot-line"></i>
+                            </button>
+                        </div>
+                        <div className="flex gap-2">
+                            <input
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                onKeyPress={(e) => e.key === 'Enter' && send()}
+                                className='p-2 px-4 border-none outline-none flex-grow'
+                                type="text"
+                                placeholder='Enter message (use AI button or @ai for AI response)'
+                            />
+                            <button
+                                onClick={send}
+                                disabled={!message.trim()}
+                                className={`px-5 bg-slate-950 rounded-md text-white ${!message.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}>
+                                <i className="ri-send-plane-fill"></i>
+                            </button>
+                        </div>
                     </div>
-
                 </div>
                 <div className={`sidePanel w-full h-full flex flex-col gap-2 bg-slate-50 absolute transition-all ${isSidePanelOpen ? 'translate-x-0' : '-translate-x-full'} top-0`}>
                     <header className='flex justify-between items-center px-4 p-2 bg-slate-200'>
