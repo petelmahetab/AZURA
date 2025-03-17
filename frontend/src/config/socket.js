@@ -27,3 +27,8 @@ export const receiveMessage = (eventName, cb) => {
 export const sendMessage = (eventName, data) => {
     socketInstance.emit(eventName, data);
 }
+export const emitUserActivity = (action) => {
+    if (socketInstance) {
+        socketInstance.emit('user-activity', { action });
+    }
+};

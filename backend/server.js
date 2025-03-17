@@ -1,3 +1,4 @@
+// server.js
 import 'dotenv/config';
 import http from 'http';
 import app from './app.js';
@@ -68,12 +69,14 @@ io.on('connection', socket => {
     socket.roomId = socket.project._id.toString();
     console.log(`User ${socket.user.id} (email: ${socket.user.email || 'unknown'}) joined room: ${socket.roomId}`);
     socket.join(socket.roomId);
-    console.log(`Active rooms for ${socket.user.id}: ${Array.from(socket.rooms)}`);
 
-    // io.to(socket.roomId).emit('project-message', {
-    //     message: `${socket.user.email || socket.user.id} has joined the room`,
-    //     sender: { _id: 'system', email: 'System' }
-    // });
+    // Notify others when a user joins
+    io.to(socket.roomId).emit('user-activity-update', {
+        userId: socket.user.id,
+        email: socket.user.email || 'unknown',
+        action: 'joined'
+    });
+
     socket.on('project-message', async data => {
         const message = data.message;
         const aiIsPresentInMessage = message.includes('@ai');
@@ -84,20 +87,34 @@ io.on('connection', socket => {
         if (aiIsPresentInMessage) {
             const prompt = message.replace('@ai', '').trim();
             const result = await generateResult(prompt);
-            console.log(`AI response before sending to room ${socket.roomId}:`, JSON.stringify(result, null, 2)); // Detailed log
+            console.log(`AI response before sending to room ${socket.roomId}:`, JSON.stringify(result, null, 2));
             io.to(socket.roomId).emit('project-message', {
                 message: JSON.stringify(result),
                 sender: { _id: 'ai', email: 'AI' }
             });
         }
     });
-    
+
+    // Handle user activity events
+    socket.on('user-activity', ({ action }) => {
+        io.to(socket.roomId).emit('user-activity-update', {
+            userId: socket.user.id,
+            email: socket.user.email || 'unknown',
+            action
+        });
+    });
+
     socket.on('disconnect', () => {
         console.log(`User ${socket.user.id} (email: ${socket.user.email || 'unknown'}) disconnected from room: ${socket.roomId}`);
+        io.to(socket.roomId).emit('user-activity-update', {
+            userId: socket.user.id,
+            email: socket.user.email || 'unknown',
+            action: 'left'
+        });
         socket.leave(socket.roomId);
     });
 });
+
 server.listen(port, () => {
     console.log(`Server is running on port ${port}`);
-})
-
+});
