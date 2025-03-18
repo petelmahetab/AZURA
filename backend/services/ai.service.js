@@ -119,12 +119,6 @@ Response: {
 }
 </example>
 
-// <example>
-// User: "Hello"
-// Response: {
-//   "text": "Hello! How can I assist you with programming today?"
-// }
-// </example>
 
 <example>
 User: "Give me code to sum an array in JavaScript"

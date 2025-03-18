@@ -10,15 +10,6 @@ redisClient.on("connect", () => {
 });
 
 
-// redisClient.set("testKey", "Redis is working!", (err, reply) => {
-//     if (err) console.error("Redis SET error:", err);
-//     else console.log("Redis SET reply:", reply);
-// });
-
-// redisClient.get("testKey", (err, reply) => {
-//     if (err) console.error("Redis GET error:", err);
-//     else console.log("Redis GET reply:", reply); // Should log: "Redis is working!"
-// });
 
 
 redisClient.on("error", (err) => {
