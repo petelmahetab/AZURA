@@ -17,5 +17,5 @@ axiosInstance.interceptors.request.use(config => {
     return config;
   }, error => Promise.reject(error));
   
-
+console.log(import.meta.env.BACKEND_API_URL)
 export default axiosInstance;   
