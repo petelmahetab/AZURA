@@ -5,7 +5,7 @@ import axios from '../config/axios';
 import { initializeSocket, receiveMessage, sendMessage, emitUserActivity } from '../config/socket.js';
 import Markdown from 'markdown-to-jsx';
 import hljs from 'highlight.js';
-import { getWebContainer } from '../config/webcontainer';
+import { getWebContainer } from '../config/webContainer.js';
 import { toast } from 'react-toastify';
 import { BotMessageSquare } from 'lucide-react';
 
