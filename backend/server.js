@@ -115,6 +115,7 @@ io.on('connection', socket => {
     });
 });
 
+// console.log("URL is",process.env.FRONTEND_URL);
 server.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
