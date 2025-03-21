@@ -367,6 +367,13 @@ const Project = () => {
 
   useEffect(() => scrollToBottom(), [messages]);
 
+  useEffect(() => {
+    // Debug state when iframeUrl or webContainer changes
+    console.log('iframeUrl:', iframeUrl);
+    console.log('webContainer:', webContainer);
+    console.log('isRunning:', isRunning);
+  }, [iframeUrl, webContainer, isRunning]);
+
   function saveFileTree(ft) {
     return axios.put('/projects/update-file-tree', {
       projectId: project._id,
@@ -443,7 +450,7 @@ const Project = () => {
               setErroredFile(errorLocation.file);
             }
             toast.error(`Server failed with exit code ${code}`);
-            setIframeUrl(null); 
+            setIframeUrl(null);
           } else {
             setErroredFile(null);
           }
@@ -452,6 +459,7 @@ const Project = () => {
         setRunProcess(tempRunProcess);
 
         webContainer.on('server-ready', (port, url) => {
+          console.log('Server ready at:', url); // Debug server-ready event
           setIframeUrl(url);
           setIsRunning(false);
         });
@@ -488,7 +496,7 @@ const Project = () => {
       const errorDetails = error.message.includes('\n') ? error.message : `${error.message}\nCheck console for more details`;
       setOutput(errorDetails);
       toast.error('Failed to execute code');
-      setIframeUrl(null); 
+      setIframeUrl(null);
       setIsRunning(false);
     }
   };
@@ -713,7 +721,7 @@ const Project = () => {
 
         <div className="code-editor flex flex-col flex-grow h-full bg-gray-900 text-white shadow-inner">
           <div className="top flex justify-between items-center p-2 bg-gray-850 border-b border-gray-700">
-            <div className="files flex gap-1 overflow-x-auto">
+            <div className="files flex-1 overflow-x-auto">
               {openFiles.map((file, index) => (
                 <div key={index} className="flex items-center bg-gray-800 rounded-t-md shadow-sm">
                   <button
@@ -733,7 +741,7 @@ const Project = () => {
                 </div>
               ))}
             </div>
-            <div className="actions flex gap-2 p-2">
+            <div className="actions flex gap-2 p-2 shrink-0">
               <button
                 onClick={runServer}
                 disabled={!isWebContainerReady || isRunning}
@@ -745,7 +753,11 @@ const Project = () => {
               </button>
               {iframeUrl && webContainer && (
                 <button
-                  onClick={() => setIframeUrl(null)}
+                  onClick={() => {
+                    setIframeUrl(null);
+                    if (runProcess) runProcess.kill(); // Ensure the process is killed
+                    setIsRunning(false);
+                  }}
                   className="p-2 px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all duration-300 transform hover:scale-105 shadow-md"
                 >
                   Stop Server
