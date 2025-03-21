@@ -285,6 +285,7 @@ const Project = () => {
         return newMap;
       });
     });
+    
 
     if (!webContainer) {
       getWebContainer().then((container) => setWebContainer(container));
