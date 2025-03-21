@@ -368,11 +368,13 @@ const Project = () => {
   useEffect(() => scrollToBottom(), [messages]);
 
   useEffect(() => {
-    // Debug state when iframeUrl or webContainer changes
+    // Debug state when key variables change
+    console.log('Debug State:');
+    console.log('isWebContainerReady:', isWebContainerReady);
+    console.log('isRunning:', isRunning);
     console.log('iframeUrl:', iframeUrl);
     console.log('webContainer:', webContainer);
-    console.log('isRunning:', isRunning);
-  }, [iframeUrl, webContainer, isRunning]);
+  }, [isWebContainerReady, isRunning, iframeUrl, webContainer]);
 
   function saveFileTree(ft) {
     return axios.put('/projects/update-file-tree', {
@@ -459,7 +461,7 @@ const Project = () => {
         setRunProcess(tempRunProcess);
 
         webContainer.on('server-ready', (port, url) => {
-          console.log('Server ready at:', url); // Debug server-ready event
+          console.log('Server ready at:', url);
           setIframeUrl(url);
           setIsRunning(false);
         });
@@ -720,7 +722,7 @@ const Project = () => {
         </div>
 
         <div className="code-editor flex flex-col flex-grow h-full bg-gray-900 text-white shadow-inner">
-          <div className="top flex justify-between items-center p-2 bg-gray-850 border-b border-gray-700">
+          <div className="top flex justify-between items-center p-2 bg-gray-850 border-b border-gray-700 min-h-[48px]">
             <div className="files flex-1 overflow-x-auto">
               {openFiles.map((file, index) => (
                 <div key={index} className="flex items-center bg-gray-800 rounded-t-md shadow-sm">
@@ -741,7 +743,8 @@ const Project = () => {
                 </div>
               ))}
             </div>
-            <div className="actions flex gap-2 p-2 shrink-0">
+            <div className="actions flex gap-2 p-2 shrink-0 min-w-[150px] border border-red-500">
+              {console.log('Rendering actions div')} {/* Debug log */}
               <button
                 onClick={runServer}
                 disabled={!isWebContainerReady || isRunning}
@@ -755,7 +758,7 @@ const Project = () => {
                 <button
                   onClick={() => {
                     setIframeUrl(null);
-                    if (runProcess) runProcess.kill(); // Ensure the process is killed
+                    if (runProcess) runProcess.kill();
                     setIsRunning(false);
                   }}
                   className="p-2 px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all duration-300 transform hover:scale-105 shadow-md"
