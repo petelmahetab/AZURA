@@ -96,7 +96,7 @@ const Project = () => {
   const [editingFile, setEditingFile] = useState(null);
   const [newFileName, setNewFileName] = useState('');
   const [erroredFile, setErroredFile] = useState(null);
-  const [isRunning, setIsRunning] = useState(false); // New state for running status
+  const [isRunning, setIsRunning] = useState(false);
 
   const handleUserClick = (id) => {
     setSelectedUserId((prev) => {
@@ -179,6 +179,7 @@ const Project = () => {
         if (parsedResponse.fileTree) {
           const updatedFileTree = { ...fileTree, ...parsedResponse.fileTree };
           setFileTree(updatedFileTree);
+          setIframeUrl(null); // Reset iframeUrl to show Run button
           saveFileTree(updatedFileTree)
             .then(() => {
               const newFiles = Object.keys(parsedResponse.fileTree);
@@ -292,6 +293,7 @@ const Project = () => {
             if (parsed.fileTree && Object.keys(parsed.fileTree).length > 0) {
               const updatedFileTree = { ...fileTree, ...parsed.fileTree };
               setFileTree(updatedFileTree);
+              setIframeUrl(null); // Reset iframeUrl to show Run button
               saveFileTree(updatedFileTree)
                 .then(() => {
                   const newFiles = Object.keys(parsed.fileTree);
@@ -392,9 +394,10 @@ const Project = () => {
 
   const runServer = async () => {
     try {
-      setIsRunning(true); // Disable button and show running state
+      setIsRunning(true);
       setErroredFile(null);
       setOutput('');
+      setIframeUrl(null);
       if (!webContainer) throw new Error('WebContainer not initialized');
       const transformedTree = convertToFileSystemTree(fileTree);
       await webContainer.mount(transformedTree);
@@ -440,16 +443,17 @@ const Project = () => {
               setErroredFile(errorLocation.file);
             }
             toast.error(`Server failed with exit code ${code}`);
+            setIframeUrl(null); 
           } else {
             setErroredFile(null);
           }
-          setIsRunning(false); // Re-enable button after process ends
+          setIsRunning(false);
         });
         setRunProcess(tempRunProcess);
 
         webContainer.on('server-ready', (port, url) => {
           setIframeUrl(url);
-          setIsRunning(false); // Re-enable button when server is ready
+          setIsRunning(false);
         });
       } else if (currentFile && fileTree[currentFile]) {
         const scriptProcess = await webContainer.spawn('node', [currentFile]);
@@ -473,7 +477,7 @@ const Project = () => {
           setErroredFile(null);
           toast.success('Script executed successfully!');
         }
-        setIsRunning(false); // Re-enable button after script execution
+        setIsRunning(false);
       } else {
         throw new Error('No valid file to execute');
       }
@@ -484,7 +488,8 @@ const Project = () => {
       const errorDetails = error.message.includes('\n') ? error.message : `${error.message}\nCheck console for more details`;
       setOutput(errorDetails);
       toast.error('Failed to execute code');
-      setIsRunning(false); // Re-enable button on error
+      setIframeUrl(null); 
+      setIsRunning(false);
     }
   };
 
@@ -738,6 +743,14 @@ const Project = () => {
               >
                 {isRunning ? 'Running...' : 'Run'}
               </button>
+              {iframeUrl && webContainer && (
+                <button
+                  onClick={() => setIframeUrl(null)}
+                  className="p-2 px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all duration-300 transform hover:scale-105 shadow-md"
+                >
+                  Stop Server
+                </button>
+              )}
             </div>
           </div>
           <div className="editor-and-terminal flex flex-col h-[calc(100%-48px)]">
