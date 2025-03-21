@@ -644,7 +644,10 @@ if (!webContainer) {
             <div className="actions flex gap-2 p-2">
               <button
                 onClick={runServer}
-                className="p-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-md"
+                disabled={!isWebContainerReady}
+                className={`p-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-md ${
+                  !isWebContainerReady ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 Run
               </button>
