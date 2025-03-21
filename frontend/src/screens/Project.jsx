@@ -96,6 +96,7 @@ const Project = () => {
   const [editingFile, setEditingFile] = useState(null);
   const [newFileName, setNewFileName] = useState('');
   const [erroredFile, setErroredFile] = useState(null);
+  const [isRunning, setIsRunning] = useState(false); // New state for running status
 
   const handleUserClick = (id) => {
     setSelectedUserId((prev) => {
@@ -121,13 +122,13 @@ const Project = () => {
     delete updatedFileTree[oldName];
 
     setFileTree(updatedFileTree);
-    setOpenFiles(prev => prev.map(file => file === oldName ? newFileName : file));
+    setOpenFiles((prev) => prev.map((file) => (file === oldName ? newFileName : file)));
     if (currentFile === oldName) setCurrentFile(newFileName);
 
     saveFileTree(updatedFileTree)
       .then(() => toast.success('File renamed successfully'))
       .catch(() => toast.error('Failed to rename file'));
-    
+
     setEditingFile(null);
   };
 
@@ -169,9 +170,7 @@ const Project = () => {
         const mockResponse = {
           fileTree: {
             'script.js': {
-              file: {
-                contents: `console.log("Hello from script.js!");`,
-              },
+              file: { contents: `console.log("Hello from script.js!");` },
             },
           },
         };
@@ -260,7 +259,7 @@ const Project = () => {
   const parseErrorLocation = (errorOutput) => {
     const match = errorOutput.match(/at\s+([^\s(]+):(\d+):(\d+)/);
     if (match) {
-      const fileName = match[1].split('/').pop(); // Extract just the file name
+      const fileName = match[1].split('/').pop();
       return { file: fileName, line: parseInt(match[2]), column: parseInt(match[3]) };
     }
     return null;
@@ -393,6 +392,7 @@ const Project = () => {
 
   const runServer = async () => {
     try {
+      setIsRunning(true); // Disable button and show running state
       setErroredFile(null);
       setOutput('');
       if (!webContainer) throw new Error('WebContainer not initialized');
@@ -441,13 +441,15 @@ const Project = () => {
             }
             toast.error(`Server failed with exit code ${code}`);
           } else {
-            setErroredFile(null); // Clear error on successful run
+            setErroredFile(null);
           }
+          setIsRunning(false); // Re-enable button after process ends
         });
         setRunProcess(tempRunProcess);
 
         webContainer.on('server-ready', (port, url) => {
           setIframeUrl(url);
+          setIsRunning(false); // Re-enable button when server is ready
         });
       } else if (currentFile && fileTree[currentFile]) {
         const scriptProcess = await webContainer.spawn('node', [currentFile]);
@@ -468,9 +470,10 @@ const Project = () => {
           }
           throw new Error(`Script execution failed with exit code ${scriptExitCode}\n${errorOutput}`);
         } else {
-          setErroredFile(null); // Clear error on successful run
+          setErroredFile(null);
           toast.success('Script executed successfully!');
         }
+        setIsRunning(false); // Re-enable button after script execution
       } else {
         throw new Error('No valid file to execute');
       }
@@ -481,6 +484,7 @@ const Project = () => {
       const errorDetails = error.message.includes('\n') ? error.message : `${error.message}\nCheck console for more details`;
       setOutput(errorDetails);
       toast.error('Failed to execute code');
+      setIsRunning(false); // Re-enable button on error
     }
   };
 
@@ -727,12 +731,12 @@ const Project = () => {
             <div className="actions flex gap-2 p-2">
               <button
                 onClick={runServer}
-                disabled={!isWebContainerReady}
+                disabled={!isWebContainerReady || isRunning}
                 className={`p-2 px-4 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-md ${
-                  !isWebContainerReady ? 'opacity-50 cursor-not-allowed' : ''
+                  !isWebContainerReady || isRunning ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
               >
-                Run
+                {isRunning ? 'Running...' : 'Run'}
               </button>
             </div>
           </div>
@@ -760,6 +764,9 @@ const Project = () => {
                 <div className="error-panel bg-red-900 text-white p-4 rounded-md mt-2">
                   <h3 className="font-bold">Error Details</h3>
                   <pre>{output}</pre>
+                  <p className="mt-2 text-sm">
+                    Fix the error in the code and click "Run" again to retry.
+                  </p>
                 </div>
               )}
             </div>
