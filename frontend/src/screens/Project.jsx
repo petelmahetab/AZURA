@@ -141,7 +141,9 @@ const Project = () => {
         const mockResponse = {
           fileTree: {
             'script.js': {
-              file: { contents: `console.log("Hello from script.js!");` },
+              file: {
+                contents: `console.log("Hello from script.js!");`,
+              },
             },
           },
         };
@@ -596,61 +598,20 @@ const Project = () => {
             <h2 className="text-lg font-semibold text-indigo-300 mb-4">Files</h2>
             {Object.keys(fileTree).length > 0 ? (
               <div className="file-list space-y-2">
-                {Object.keys(fileTree).map((file, index) => {
-                  const [isEditing, setIsEditing] = useState(false);
-                  const [newFileName, setNewFileName] = useState(file);
-
-                  const handleRename = () => {
-                    if (newFileName && newFileName !== file) {
-                      const updatedFileTree = { ...fileTree };
-                      updatedFileTree[newFileName] = updatedFileTree[file];
-                      delete updatedFileTree[file];
-                      setFileTree(updatedFileTree);
-                      saveFileTree(updatedFileTree);
-                      setOpenFiles((prev) => prev.map((f) => (f === file ? newFileName : f)));
-                      if (currentFile === file) setCurrentFile(newFileName);
-                    }
-                    setIsEditing(false);
-                  };
-
-                  return (
-                    <div
-                      key={index}
-                      className="file-button w-full flex items-center gap-2 p-2 bg-gray-750 rounded-md hover:bg-indigo-700 transition-all duration-300 text-white shadow-sm group"
-                    >
-                      <button
-                        onClick={() => {
-                          setCurrentFile(file);
-                          setOpenFiles((prev) => [...new Set([...prev, file])]);
-                        }}
-                        className="flex items-center gap-2 flex-grow text-left"
-                        title={file}
-                      >
-                        <i className="ri-file-line text-indigo-400 flex-shrink-0"></i>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={newFileName}
-                            onChange={(e) => setNewFileName(e.target.value)}
-                            onBlur={handleRename}
-                            onKeyPress={(e) => e.key === 'Enter' && handleRename()}
-                            className="bg-gray-800 text-white border border-gray-600 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                            autoFocus
-                          />
-                        ) : (
-                          <span className="file-name flex-grow truncate">{file}</span>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => setIsEditing(true)}
-                        className="p-1 text-gray-400 hover:text-indigo-300 transition-colors opacity-0 group-hover:opacity-100"
-                        title="Rename File"
-                      >
-                        <i className="ri-edit-line"></i>
-                      </button>
-                    </div>
-                  );
-                })}
+                {Object.keys(fileTree).map((file, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setCurrentFile(file);
+                      setOpenFiles((prev) => [...new Set([...prev, file])]);
+                    }}
+                    className="file-button w-full flex items-center gap-2 p-2 bg-gray-750 rounded-md hover:bg-indigo-700 transition-all duration-300 text-white transform hover:scale-105 shadow-sm group"
+                    title={file}
+                  >
+                    <i className="ri-file-line text-indigo-400 flex-shrink-0"></i>
+                    <span className="file-name flex-grow text-left truncate">{file}</span>
+                  </button>
+                ))}
               </div>
             ) : (
               <p className="text-gray-400 italic">No files yet</p>
