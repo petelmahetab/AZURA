@@ -2,7 +2,7 @@ import axios from 'axios';
 //import dotenv from 'dotenv'
 
 const axiosInstance = axios.create({
-    baseURL: import.meta.env.BACKEND_API_URL || 'http://localhost:4000',
+    baseURL: import.meta.env.BACKEND_API_URL || 'https://azura-rzbi.onrender.com/',
     headers: {
         "Authorization": `Bearer ${localStorage.getItem('token')}`
     }
