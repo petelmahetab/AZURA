@@ -258,9 +258,10 @@ const Project = () => {
   }
 
   const parseErrorLocation = (errorOutput) => {
-    const match = errorOutput.match(/at\s+(.+):(\d+):(\d+)/);
+    const match = errorOutput.match(/at\s+([^\s(]+):(\d+):(\d+)/);
     if (match) {
-      return { file: match[1], line: parseInt(match[2]), column: parseInt(match[3]) };
+      const fileName = match[1].split('/').pop(); // Extract just the file name
+      return { file: fileName, line: parseInt(match[2]), column: parseInt(match[3]) };
     }
     return null;
   };
@@ -415,7 +416,9 @@ const Project = () => {
         if (installExitCode !== 0) {
           const errorOutput = outputLogs.join('\n');
           const errorLocation = parseErrorLocation(errorOutput);
-          if (errorLocation) setErroredFile(errorLocation.file);
+          if (errorLocation && Object.keys(fileTree).includes(errorLocation.file)) {
+            setErroredFile(errorLocation.file);
+          }
           throw new Error(`npm install failed with exit code ${installExitCode}\n${errorOutput}`);
         }
 
@@ -433,8 +436,12 @@ const Project = () => {
           if (code !== 0) {
             const errorOutput = outputLogs.join('\n');
             const errorLocation = parseErrorLocation(errorOutput);
-            if (errorLocation) setErroredFile(errorLocation.file);
+            if (errorLocation && Object.keys(fileTree).includes(errorLocation.file)) {
+              setErroredFile(errorLocation.file);
+            }
             toast.error(`Server failed with exit code ${code}`);
+          } else {
+            setErroredFile(null); // Clear error on successful run
           }
         });
         setRunProcess(tempRunProcess);
@@ -456,10 +463,14 @@ const Project = () => {
         if (scriptExitCode !== 0) {
           const errorOutput = outputLogs.join('\n');
           const errorLocation = parseErrorLocation(errorOutput);
-          if (errorLocation) setErroredFile(currentFile);
+          if (errorLocation && errorLocation.file === currentFile) {
+            setErroredFile(currentFile);
+          }
           throw new Error(`Script execution failed with exit code ${scriptExitCode}\n${errorOutput}`);
+        } else {
+          setErroredFile(null); // Clear error on successful run
+          toast.success('Script executed successfully!');
         }
-        toast.success('Script executed successfully!');
       } else {
         throw new Error('No valid file to execute');
       }
