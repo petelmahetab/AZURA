@@ -46,7 +46,7 @@ const CodeEditorArea = ({ fileTree, currentFile, setFileTree, saveFileTree }) =>
   }, [currentFile, fileTree]);
 
   return (
-    <div className="code-editor-area h-full bg-gray-900 p-4 animate-fade-in">
+    <div className="code-editor-area h-full bg-gray-900 p-4 animate-fade-in overflow-y-auto custom-scrollbar">
       <pre className="hljs h-full">
         <code
           ref={codeRef}
@@ -92,7 +92,7 @@ const Project = () => {
   const [iframeUrl, setIframeUrl] = useState(null);
   const [runProcess, setRunProcess] = useState(null);
   const [output, setOutput] = useState('');
-  const [onlineUsers, setOnlineUsers] = useState(new Map()); 
+  const [onlineUsers, setOnlineUsers] = useState(new Map());
   const [isWebContainerReady, setIsWebContainerReady] = useState(false);
 
   const handleUserClick = (id) => {
@@ -233,12 +233,12 @@ const Project = () => {
     const socket = initializeSocket(project._id);
     socket.on('connect', () => {
       toast.success(`${user.email} connected`, { toastId: `connect-${user._id}` });
-      emitUserActivity('joined'); // Emit join event
+      emitUserActivity('joined');
     });
     socket.on('connect_error', () => toast.error('Not connected', { toastId: `connect_error-${user._id}` }));
     socket.on('disconnect', () => {
       toast.warn(`${user.email} disconnected`, { toastId: `disconnect-${user._id}` });
-      emitUserActivity('left'); // Emit leave event
+      emitUserActivity('left');
     });
 
     receiveMessage('project-message', (data) => {
@@ -286,19 +286,19 @@ const Project = () => {
         return newMap;
       });
     });
-    
-if (!webContainer) {
-    getWebContainer()
-      .then((container) => {
-        setWebContainer(container);
-        setIsWebContainerReady(true); 
-        toast.success('WebContainer initialized');
-      })
-      .catch((error) => {
-        console.error('WebContainer initialization failed:', error);
-        toast.error(`WebContainer failed to initialize: ${error.message}`);
-      });
-  }
+
+    if (!webContainer) {
+      getWebContainer()
+        .then((container) => {
+          setWebContainer(container);
+          setIsWebContainerReady(true);
+          toast.success('WebContainer initialized');
+        })
+        .catch((error) => {
+          console.error('WebContainer initialization failed:', error);
+          toast.error(`WebContainer failed to initialize: ${error.message}`);
+        });
+    }
 
     axios.get(`/projects/get-project/${project._id}`).then((res) => {
       setProject(res.data.project);
@@ -653,8 +653,8 @@ if (!webContainer) {
               </button>
             </div>
           </div>
-          <div className="editor-and-terminal flex flex-col flex-grow overflow-hidden">
-            <div className="editor flex-grow overflow-auto">
+          <div className="editor-and-terminal flex flex-col h-[calc(100%-48px)]">
+            <div className="editor h-3/4 overflow-y-auto custom-scrollbar">
               {fileTree[currentFile] ? (
                 <CodeEditorArea
                   fileTree={fileTree}
@@ -670,7 +670,7 @@ if (!webContainer) {
                 </div>
               )}
             </div>
-            <div className="terminal h-1/4 bg-gray-800 border-t border-gray-700 p-2 overflow-auto">
+            <div className="terminal h-1/4 bg-gray-800 border-t border-gray-700 p-2 overflow-y-auto custom-scrollbar">
               <h3 className="text-sm font-semibold text-indigo-300 mb-1">Output</h3>
               <pre className="text-white text-sm whitespace-pre-wrap">{output || ' '}</pre>
             </div>
