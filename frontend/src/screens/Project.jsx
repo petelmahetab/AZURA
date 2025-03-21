@@ -92,7 +92,8 @@ const Project = () => {
   const [iframeUrl, setIframeUrl] = useState(null);
   const [runProcess, setRunProcess] = useState(null);
   const [output, setOutput] = useState('');
-  const [onlineUsers, setOnlineUsers] = useState(new Map()); // Map of userId -> { email }
+  const [onlineUsers, setOnlineUsers] = useState(new Map()); 
+  const [isWebContainerReady, setIsWebContainerReady] = useState(false);
 
   const handleUserClick = (id) => {
     setSelectedUserId((prev) => {
@@ -286,10 +287,18 @@ const Project = () => {
       });
     });
     
-
-    if (!webContainer) {
-      getWebContainer().then((container) => setWebContainer(container));
-    }
+if (!webContainer) {
+    getWebContainer()
+      .then((container) => {
+        setWebContainer(container);
+        setIsWebContainerReady(true); 
+        toast.success('WebContainer initialized');
+      })
+      .catch((error) => {
+        console.error('WebContainer initialization failed:', error);
+        toast.error(`WebContainer failed to initialize: ${error.message}`);
+      });
+  }
 
     axios.get(`/projects/get-project/${project._id}`).then((res) => {
       setProject(res.data.project);
