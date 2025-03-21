@@ -21,7 +21,10 @@ const port = process.env.PORT || 4000;
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: "https://chat-with-me-inky.vercel.app/",
+      origin: [
+            "https://chat-with-me-inky.vercel.app/",
+            "http://localhost:5173" 
+        ],
         methods: ["GET", "POST"],
         credentials: true,
     },
