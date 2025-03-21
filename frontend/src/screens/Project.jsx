@@ -141,9 +141,7 @@ const Project = () => {
         const mockResponse = {
           fileTree: {
             'script.js': {
-              file: {
-                contents: `console.log("Hello from script.js!");`,
-              },
+              file: { contents: `console.log("Hello from script.js!");` },
             },
           },
         };
@@ -595,69 +593,69 @@ const Project = () => {
       <section className="right flex-grow h-full flex bg-gray-850">
         <div className="explorer w-64 h-full bg-gray-800 shadow-md border-r border-gray-700 animate-slide-in-left">
           <div className="file-tree w-full p-4">
-  <h2 className="text-lg font-semibold text-indigo-300 mb-4">Files</h2>
-  {Object.keys(fileTree).length > 0 ? (
-    <div className="file-list space-y-2">
-      {Object.keys(fileTree).map((file, index) => {
-        const [isEditing, setIsEditing] = useState(false);
-        const [newFileName, setNewFileName] = useState(file);
+            <h2 className="text-lg font-semibold text-indigo-300 mb-4">Files</h2>
+            {Object.keys(fileTree).length > 0 ? (
+              <div className="file-list space-y-2">
+                {Object.keys(fileTree).map((file, index) => {
+                  const [isEditing, setIsEditing] = useState(false);
+                  const [newFileName, setNewFileName] = useState(file);
 
-        const handleRename = () => {
-          if (newFileName && newFileName !== file) {
-            const updatedFileTree = { ...fileTree };
-            updatedFileTree[newFileName] = updatedFileTree[file];
-            delete updatedFileTree[file];
-            setFileTree(updatedFileTree);
-            saveFileTree(updatedFileTree);
-            setOpenFiles((prev) => prev.map((f) => (f === file ? newFileName : f)));
-            if (currentFile === file) setCurrentFile(newFileName);
-          }
-          setIsEditing(false);
-        };
+                  const handleRename = () => {
+                    if (newFileName && newFileName !== file) {
+                      const updatedFileTree = { ...fileTree };
+                      updatedFileTree[newFileName] = updatedFileTree[file];
+                      delete updatedFileTree[file];
+                      setFileTree(updatedFileTree);
+                      saveFileTree(updatedFileTree);
+                      setOpenFiles((prev) => prev.map((f) => (f === file ? newFileName : f)));
+                      if (currentFile === file) setCurrentFile(newFileName);
+                    }
+                    setIsEditing(false);
+                  };
 
-        return (
-          <div
-            key={index}
-            className="file-button w-full flex items-center gap-2 p-2 bg-gray-750 rounded-md hover:bg-indigo-700 transition-all duration-300 text-white shadow-sm group"
-          >
-            <button
-              onClick={() => {
-                setCurrentFile(file);
-                setOpenFiles((prev) => [...new Set([...prev, file])]);
-              }}
-              className="flex items-center gap-2 flex-grow text-left"
-              title={file}
-            >
-              <i className="ri-file-line text-indigo-400 flex-shrink-0"></i>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={newFileName}
-                  onChange={(e) => setNewFileName(e.target.value)}
-                  onBlur={handleRename}
-                  onKeyPress={(e) => e.key === 'Enter' && handleRename()}
-                  className="bg-gray-800 text-white border border-gray-600 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                  autoFocus
-                />
-              ) : (
-                <span className="file-name flex-grow truncate">{file}</span>
-              )}
-            </button>
-            <button
-              onClick={() => setIsEditing(true)}
-              className="p-1 text-gray-400 hover:text-indigo-300 transition-colors opacity-0 group-hover:opacity-100"
-              title="Rename File"
-            >
-              <i className="ri-edit-line"></i>
-            </button>
+                  return (
+                    <div
+                      key={index}
+                      className="file-button w-full flex items-center gap-2 p-2 bg-gray-750 rounded-md hover:bg-indigo-700 transition-all duration-300 text-white shadow-sm group"
+                    >
+                      <button
+                        onClick={() => {
+                          setCurrentFile(file);
+                          setOpenFiles((prev) => [...new Set([...prev, file])]);
+                        }}
+                        className="flex items-center gap-2 flex-grow text-left"
+                        title={file}
+                      >
+                        <i className="ri-file-line text-indigo-400 flex-shrink-0"></i>
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={newFileName}
+                            onChange={(e) => setNewFileName(e.target.value)}
+                            onBlur={handleRename}
+                            onKeyPress={(e) => e.key === 'Enter' && handleRename()}
+                            className="bg-gray-800 text-white border border-gray-600 rounded-md px-2 py-1 w-full focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="file-name flex-grow truncate">{file}</span>
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        className="p-1 text-gray-400 hover:text-indigo-300 transition-colors opacity-0 group-hover:opacity-100"
+                        title="Rename File"
+                      >
+                        <i className="ri-edit-line"></i>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-gray-400 italic">No files yet</p>
+            )}
           </div>
-        );
-      })}
-    </div>
-  ) : (
-    <p className="text-gray-400 italic">No files yet</p>
-  )}
-</div>
         </div>
 
         <div className="code-editor flex flex-col flex-grow h-full bg-gray-900 text-white shadow-inner">
