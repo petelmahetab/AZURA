@@ -1,17 +1,10 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
-// https://vite.dev/config/
 export default defineConfig({
-  plugins: [ react() ],
+  plugins: [react()],
   server: {
-    server: {
-      port: 5173,
-    },
-    headers: {
-      "Cross-Origin-Embedder-Policy": "require-corp",
-      "Cross-Origin-Opener-Policy": "same-origin"
-    },
+    port: 5173,
     proxy: {
       '/cdn': {
         target: 'https://unpkg.com',
@@ -20,4 +13,4 @@ export default defineConfig({
       }
     }
   }
-})
+});
