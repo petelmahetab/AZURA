@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 let socketInstance;
 
 export const initializeSocket = (projectId) => {
-    let apiUrl = import.meta.env.VITE_API_URL || 'https://chat-with-me-inky.vercel.app/';
+    let apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
     if (socketInstance && socketInstance.connected) {
         return socketInstance;
     }
