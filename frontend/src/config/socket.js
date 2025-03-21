@@ -11,7 +11,7 @@ export const initializeSocket = (projectId) => {
     socketInstance = io(apiUrl, {
         auth: { token },
         query: { projectId },
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'],
     });
     return socketInstance;
 };
