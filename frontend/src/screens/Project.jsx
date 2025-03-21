@@ -82,7 +82,6 @@ const Project = () => {
   const [message, setMessage] = useState('');
   const { user } = useContext(UserContext);
   const messageBox = React.createRef();
-
   const [users, setUsers] = useState([]);
   const [messages, setMessages] = useState([]);
   const [fileTree, setFileTree] = useState({});
@@ -96,6 +95,7 @@ const Project = () => {
   const [isWebContainerReady, setIsWebContainerReady] = useState(false);
   const [editingFile, setEditingFile] = useState(null);
   const [newFileName, setNewFileName] = useState('');
+  const [erroredFile, setErroredFile] = useState(null);
 
   const handleUserClick = (id) => {
     setSelectedUserId((prev) => {
@@ -257,6 +257,14 @@ const Project = () => {
     );
   }
 
+  const parseErrorLocation = (errorOutput) => {
+    const match = errorOutput.match(/at\s+(.+):(\d+):(\d+)/);
+    if (match) {
+      return { file: match[1], line: parseInt(match[2]), column: parseInt(match[3]) };
+    }
+    return null;
+  };
+
   useEffect(() => {
     if (!project._id) return;
 
@@ -384,81 +392,83 @@ const Project = () => {
 
   const runServer = async () => {
     try {
+      setErroredFile(null);
+      setOutput('');
       if (!webContainer) throw new Error('WebContainer not initialized');
-      console.log('Mounting fileTree:', JSON.stringify(fileTree, null, 2));
       const transformedTree = convertToFileSystemTree(fileTree);
-      console.log('Transformed fileTree:', JSON.stringify(transformedTree, null, 2));
       await webContainer.mount(transformedTree);
-      console.log('File tree mounted successfully');
 
       const hasPackageJson = Object.keys(fileTree).some((file) => file === 'package.json');
       const outputLogs = [];
 
       if (hasPackageJson) {
-        console.log('Running npm install...');
         const installProcess = await webContainer.spawn('npm', ['install']);
         installProcess.output.pipeTo(
           new WritableStream({
             write(chunk) {
-              console.log('npm install output:', chunk);
               outputLogs.push(stripAnsi(chunk));
+              setOutput(outputLogs.join('\n'));
             },
           })
         );
         const installExitCode = await installProcess.exit;
-        if (installExitCode !== 0) throw new Error(`npm install failed with exit code ${installExitCode}`);
+        if (installExitCode !== 0) {
+          const errorOutput = outputLogs.join('\n');
+          const errorLocation = parseErrorLocation(errorOutput);
+          if (errorLocation) setErroredFile(errorLocation.file);
+          throw new Error(`npm install failed with exit code ${installExitCode}\n${errorOutput}`);
+        }
 
         if (runProcess) runProcess.kill();
-
-        console.log('Running npm start...');
         const tempRunProcess = await webContainer.spawn('npm', ['start'], { tty: true });
         tempRunProcess.output.pipeTo(
           new WritableStream({
             write(chunk) {
-              console.log('Server output:', chunk);
               outputLogs.push(stripAnsi(chunk));
+              setOutput(outputLogs.join('\n'));
             },
           })
         );
         tempRunProcess.exit.then((code) => {
-          if (code !== 0) toast.error(`Server failed with exit code ${code}`);
-        }).catch((err) => {
-          toast.error('Server failed to start');
+          if (code !== 0) {
+            const errorOutput = outputLogs.join('\n');
+            const errorLocation = parseErrorLocation(errorOutput);
+            if (errorLocation) setErroredFile(errorLocation.file);
+            toast.error(`Server failed with exit code ${code}`);
+          }
         });
         setRunProcess(tempRunProcess);
 
         webContainer.on('server-ready', (port, url) => {
-          console.log(`Server ready at port ${port}: ${url}`);
           setIframeUrl(url);
         });
       } else if (currentFile && fileTree[currentFile]) {
-        console.log(`Executing ${currentFile}...`);
         const scriptProcess = await webContainer.spawn('node', [currentFile]);
         scriptProcess.output.pipeTo(
           new WritableStream({
             write(chunk) {
-              console.log('Script output:', chunk);
               outputLogs.push(stripAnsi(chunk));
+              setOutput(outputLogs.join('\n'));
             },
           })
         );
         const scriptExitCode = await scriptProcess.exit;
-        if (scriptExitCode !== 0) throw new Error(`Script execution failed with exit code ${scriptExitCode}`);
+        if (scriptExitCode !== 0) {
+          const errorOutput = outputLogs.join('\n');
+          const errorLocation = parseErrorLocation(errorOutput);
+          if (errorLocation) setErroredFile(currentFile);
+          throw new Error(`Script execution failed with exit code ${scriptExitCode}\n${errorOutput}`);
+        }
         toast.success('Script executed successfully!');
       } else {
         throw new Error('No valid file to execute');
       }
 
       setOutput(outputLogs.join('\n'));
-
-      setTimeout(() => {
-        if (hasPackageJson && !iframeUrl) {
-          console.log('Server not ready after 10 seconds');
-        }
-      }, 10000);
     } catch (error) {
       console.error('Error running code:', error);
-      setOutput(`Error: ${error.message}`);
+      const errorDetails = error.message.includes('\n') ? error.message : `${error.message}\nCheck console for more details`;
+      setOutput(errorDetails);
       toast.error('Failed to execute code');
     }
   };
@@ -654,7 +664,9 @@ const Project = () => {
                           setOpenFiles((prev) => [...new Set([...prev, file])]);
                         }}
                         onDoubleClick={() => startEditingFile(file)}
-                        className="file-button w-full flex items-center gap-2 p-2 bg-gray-750 rounded-md hover:bg-indigo-700 transition-all duration-300 text-white transform hover:scale-105 shadow-sm group"
+                        className={`file-button w-full flex items-center gap-2 p-2 rounded-md transition-all duration-300 text-white transform hover:scale-105 shadow-sm group ${
+                          file === erroredFile ? 'bg-red-700' : 'bg-gray-750 hover:bg-indigo-700'
+                        }`}
                         title="Double-click to rename"
                       >
                         <i className="ri-file-line text-indigo-400 flex-shrink-0"></i>
@@ -733,6 +745,12 @@ const Project = () => {
             <div className="terminal h-1/4 bg-gray-800 border-t border-gray-700 p-2 overflow-y-auto custom-scrollbar">
               <h3 className="text-sm font-semibold text-indigo-300 mb-1">Output</h3>
               <pre className="text-white text-sm whitespace-pre-wrap">{output || ' '}</pre>
+              {output.includes('Error') && (
+                <div className="error-panel bg-red-900 text-white p-4 rounded-md mt-2">
+                  <h3 className="font-bold">Error Details</h3>
+                  <pre>{output}</pre>
+                </div>
+              )}
             </div>
           </div>
         </div>
