@@ -78,7 +78,7 @@ const Project = () => {
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(new Set());
-  const [project, setProject] = useState(location.state.project);
+  const [project, setProject] = useState(location.state?.project || {});
   const [message, setMessage] = useState('');
   const { user } = useContext(UserContext);
   const messageBox = React.createRef();
@@ -94,6 +94,8 @@ const Project = () => {
   const [output, setOutput] = useState('');
   const [onlineUsers, setOnlineUsers] = useState(new Map());
   const [isWebContainerReady, setIsWebContainerReady] = useState(false);
+  const [editingFile, setEditingFile] = useState(null);
+  const [newFileName, setNewFileName] = useState('');
 
   const handleUserClick = (id) => {
     setSelectedUserId((prev) => {
@@ -103,10 +105,36 @@ const Project = () => {
     });
   };
 
+  const startEditingFile = (fileName) => {
+    setEditingFile(fileName);
+    setNewFileName(fileName);
+  };
+
+  const handleFileRename = (oldName) => {
+    if (!newFileName || newFileName === oldName || newFileName.trim() === '') {
+      setEditingFile(null);
+      return;
+    }
+
+    const updatedFileTree = { ...fileTree };
+    updatedFileTree[newFileName] = updatedFileTree[oldName];
+    delete updatedFileTree[oldName];
+
+    setFileTree(updatedFileTree);
+    setOpenFiles(prev => prev.map(file => file === oldName ? newFileName : file));
+    if (currentFile === oldName) setCurrentFile(newFileName);
+
+    saveFileTree(updatedFileTree)
+      .then(() => toast.success('File renamed successfully'))
+      .catch(() => toast.error('Failed to rename file'));
+    
+    setEditingFile(null);
+  };
+
   function addCollaborators() {
     if (selectedUserId.size === 0) return;
     const payload = {
-      projectId: location.state.project._id,
+      projectId: project._id,
       users: Array.from(selectedUserId),
     };
     axios.put('/projects/add-user', payload)
@@ -230,6 +258,8 @@ const Project = () => {
   }
 
   useEffect(() => {
+    if (!project._id) return;
+
     const socket = initializeSocket(project._id);
     socket.on('connect', () => {
       toast.success(`${user.email} connected`, { toastId: `connect-${user._id}` });
@@ -300,13 +330,20 @@ const Project = () => {
         });
     }
 
-    axios.get(`/projects/get-project/${project._id}`).then((res) => {
-      setProject(res.data.project);
-      setFileTree(res.data.project.fileTree || {});
-      setOpenFiles([]);
-      setCurrentFile(null);
-    });
+    const fetchProjectData = async () => {
+      try {
+        const res = await axios.get(`/projects/get-project/${project._id}`);
+        setProject(res.data.project);
+        setFileTree(res.data.project.fileTree || {});
+        setOpenFiles([]);
+        setCurrentFile(null);
+      } catch (error) {
+        console.error('Failed to fetch project:', error);
+        toast.error('Failed to load project data');
+      }
+    };
 
+    fetchProjectData();
     axios.get('/users/all').then((res) => setUsers(res.data.users));
 
     return () => {
@@ -599,18 +636,41 @@ const Project = () => {
             {Object.keys(fileTree).length > 0 ? (
               <div className="file-list space-y-2">
                 {Object.keys(fileTree).map((file, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setCurrentFile(file);
-                      setOpenFiles((prev) => [...new Set([...prev, file])]);
-                    }}
-                    className="file-button w-full flex items-center gap-2 p-2 bg-gray-750 rounded-md hover:bg-indigo-700 transition-all duration-300 text-white transform hover:scale-105 shadow-sm group"
-                    title={file}
-                  >
-                    <i className="ri-file-line text-indigo-400 flex-shrink-0"></i>
-                    <span className="file-name flex-grow text-left truncate">{file}</span>
-                  </button>
+                  <div key={index} className="flex items-center gap-2">
+                    {editingFile === file ? (
+                      <input
+                        type="text"
+                        value={newFileName}
+                        onChange={(e) => setNewFileName(e.target.value)}
+                        onBlur={() => handleFileRename(file)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleFileRename(file)}
+                        className="w-full p-1 bg-gray-700 text-white rounded-md border border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                        autoFocus
+                      />
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setCurrentFile(file);
+                          setOpenFiles((prev) => [...new Set([...prev, file])]);
+                        }}
+                        onDoubleClick={() => startEditingFile(file)}
+                        className="file-button w-full flex items-center gap-2 p-2 bg-gray-750 rounded-md hover:bg-indigo-700 transition-all duration-300 text-white transform hover:scale-105 shadow-sm group"
+                        title="Double-click to rename"
+                      >
+                        <i className="ri-file-line text-indigo-400 flex-shrink-0"></i>
+                        <span className="file-name flex-grow text-left truncate">{file}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditingFile(file);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-300 transition-opacity"
+                        >
+                          <i className="ri-pencil-line"></i>
+                        </button>
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             ) : (
@@ -655,7 +715,7 @@ const Project = () => {
           </div>
           <div className="editor-and-terminal flex flex-col h-[calc(100%-48px)]">
             <div className="editor h-3/4 overflow-y-auto custom-scrollbar">
-              {fileTree[currentFile] ? (
+              {currentFile && fileTree[currentFile] ? (
                 <CodeEditorArea
                   fileTree={fileTree}
                   currentFile={currentFile}
