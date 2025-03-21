@@ -7,14 +7,15 @@ export const initializeSocket = (projectId) => {
     
 
     if (socketInstance && socketInstance.connected) {
-       // console.log(`Reusing socket for project: ${projectId}`);
+     
         return socketInstance;
     }
 
     const token = localStorage.getItem('token');
     socketInstance = io(apiUrl, {
         auth: { token },
-        query: { projectId }
+        query: { projectId },
+        transports: ['websocket'],
     });
 
     return socketInstance;
