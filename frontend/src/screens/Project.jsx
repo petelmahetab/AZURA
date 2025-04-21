@@ -675,46 +675,47 @@ const Project = () => {
             <h2 className="text-lg font-semibold text-indigo-300 mb-4">Files</h2>
             {Object.keys(fileTree).length > 0 ? (
               <div className="file-list space-y-2">
-                {Object.keys(fileTree).map((file, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    {editingFile === file ? (
-                      <input
-                        type="text"
-                        value={newFileName}
-                        onChange={(e) => setNewFileName(e.target.value)}
-                        onBlur={() => handleFileRename(file)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleFileRename(file)}
-                        className="w-full p-1 bg-gray-700 text-white rounded-md border border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                        autoFocus
-                      />
-                    ) : (
-                      <button
-                        onClick={() => {
-                          setCurrentFile(file);
-                          setOpenFiles((prev) => [...new Set([...prev, file])]);
-                        }}
-                        onDoubleClick={() => startEditingFile(file)}
-                        className={`file-button w-full flex items-center gap-2 p-2 rounded-md transition-all duration-300 text-white transform hover:scale-105 shadow-sm group ${
-                          file === erroredFile ? 'bg-red-700' : 'bg-gray-750 hover:bg-indigo-700'
-                        }`}
-                        title="Double-click to rename"
-                      >
-                        <i className="ri-file-line text-indigo-400 flex-shrink-0"></i>
-                        <span className="file-name flex-grow text-left truncate">{file}</span>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            startEditingFile(file);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-300 transition-opacity"
-                        >
-                          <i className="ri-pencil-line"></i>
-                        </button>
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
+  {Object.keys(fileTree).map((file, index) => (
+    <div key={index} className="flex items-center gap-2">
+      {editingFile === file ? (
+        <input
+          type="text"
+          value={newFileName}
+          onChange={(e) => setNewFileName(e.target.value)}
+          onBlur={() => handleFileRename(file)}
+          onKeyPress={(e) => e.key === 'Enter' && handleFileRename(file)}
+          className="w-full p-1 bg-gray-700 text-white rounded-md border border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+          autoFocus
+          aria-label="Rename File"
+        />
+      ) : (
+        <button
+          onClick={() => {
+            setCurrentFile(file);
+            setOpenFiles((prev) => [...new Set([...prev, file])]);
+          }}
+          onDoubleClick={() => startEditingFile(file)}
+          className={`file-button w-full flex items-center gap-2 p-2 rounded-md transition-all duration-300 text-white transform hover:scale-105 shadow-sm group ${
+            file === erroredFile ? 'bg-red-700' : 'bg-gray-750 hover:bg-indigo-700'
+          } ${onlineUsers.has(file) ? 'border-l-4 border-green-500' : ''}`}
+          title="Double-click to rename"
+        >
+          <i className="ri-file-line text-indigo-400 flex-shrink-0"></i>
+          <span className="file-name flex-grow text-left truncate">{file}</span>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              startEditingFile(file);
+            }}
+            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-300 transition-opacity"
+          >
+            <i className="ri-pencil-line"></i>
+          </button>
+        </button>
+      )}
+    </div>
+  ))}
+</div>
             ) : (
               <p className="text-gray-400 italic">No files yet</p>
             )}
