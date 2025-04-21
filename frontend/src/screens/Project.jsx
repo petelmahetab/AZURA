@@ -483,15 +483,6 @@ const Project = () => {
               <UsersIcon size={14} className="md:size-16" />
             </button>
           </div>
-          <div className="flex gap-1 md:gap-2">
-            <button
-              className="p-1 text-indigo-300 hover:bg-indigo-600 rounded-md transition-all duration-300 md:p-2"
-              onClick={() => navigate('/')}
-              title="Back to Home"
-            >
-              <i className="ri-home-4-fill text-sm md:text-base"></i>
-            </button>
-          </div>
         </header>
         <div className="conversation-area flex-grow flex flex-col p-2 overflow-hidden md:p-3">
           <div ref={messageBox} className="message-box flex-grow flex flex-col gap-2 overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-gray-800">
@@ -614,7 +605,7 @@ const Project = () => {
 
         <div className="code-editor flex flex-col flex-grow h-[calc(100%-64px)] bg-gray-900 shadow-inner">
           <div className="top flex justify-between items-center p-1 bg-gray-850 border-b border-gray-700 min-h-[40px]">
-            <div className="files flex-1 overflow-x-auto flex-nowrap space-x-1">
+            <div className="files flex flex-row overflow-x-auto space-x-1">
               {openFiles.map((file, index) => (
                 <div key={index} className="flex items-center bg-gray-800 rounded-t-md shadow-sm">
                   <button
