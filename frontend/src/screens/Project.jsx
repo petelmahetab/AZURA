@@ -60,7 +60,7 @@ const CodeEditorArea = ({ fileTree, currentFile, setFileTree, saveFileTree }) =>
             saveFileTree(ft);
           }}
           dangerouslySetInnerHTML={{
-            __html: hljs.highlight(fileTree[currentFile].file.contents, {
+            __html: hljs.highlight(fileTree[currentFile]?.file?.contents || '', {
               language: getLanguageFromFileName(currentFile),
               ignoreIllegals: true,
             }).value,
@@ -128,7 +128,10 @@ const Project = () => {
 
     saveFileTree(updatedFileTree)
       .then(() => toast.success('File renamed successfully'))
-      .catch(() => toast.error('Failed to rename file'));
+      .catch((err) => {
+        console.error('Rename failed:', err);
+        toast.error('Failed to rename file');
+      });
 
     setEditingFile(null);
   };
@@ -145,7 +148,10 @@ const Project = () => {
         setIsModalOpen(false);
         toast.success('Collaborators added!');
       })
-      .catch((err) => toast.error('Failed to add collaborators'));
+      .catch((err) => {
+        console.error('Add collaborators failed:', err);
+        toast.error('Failed to add collaborators');
+      });
   }
 
   const send = () => {
@@ -181,20 +187,11 @@ const Project = () => {
           const updatedFileTree = { ...fileTree, ...parsedResponse.fileTree };
           setFileTree(updatedFileTree);
           setIframeUrl(null);
-          saveFileTree(updatedFileTree)
-            .then(() => {
-              const newFiles = Object.keys(parsedResponse.fileTree);
-              setOpenFiles((prev) => [...new Set([...prev, ...newFiles])]);
-              setCurrentFile(newFiles[0]);
-              toast.success('Code added to editor!');
-            })
-            .catch(() => toast.error('Failed to add code to editor'));
-          if (parsedResponse.text) {
-            setMessages((prev) => [
-              ...prev,
-              { sender: { _id: 'ai', email: 'AI' }, message: { text: parsedResponse.text }, timestamp },
-            ]);
-          }
+          await saveFileTree(updatedFileTree);
+          const newFiles = Object.keys(parsedResponse.fileTree);
+          setOpenFiles((prev) => [...new Set([...prev, ...newFiles])]);
+          setCurrentFile(newFiles[0]);
+          toast.success('Code added to editor!');
         }
       } catch (error) {
         console.error('AI response error:', error);
@@ -275,7 +272,10 @@ const Project = () => {
       toast.success(`${user.email} connected`, { toastId: `connect-${user._id}` });
       emitUserActivity('joined');
     });
-    socket.on('connect_error', () => toast.error('Not connected', { toastId: `connect_error-${user._id}` }));
+    socket.on('connect_error', (err) => {
+      console.error('Socket connection error:', err);
+      toast.error('Not connected', { toastId: `connect_error-${user._id}` });
+    });
     socket.on('disconnect', () => {
       toast.warn(`${user.email} disconnected`, { toastId: `disconnect-${user._id}` });
       emitUserActivity('left');
@@ -302,12 +302,16 @@ const Project = () => {
                   setCurrentFile(newFiles[0]);
                   toast.success('Code added to editor!');
                 })
-                .catch(() => toast.error('Failed to add code to editor'));
+                .catch((err) => {
+                  console.error('Save file tree failed:', err);
+                  toast.error('Failed to add code to editor');
+                });
               parsedMessage = { text: parsed.text };
             } else {
               parsedMessage = parsed;
             }
           } catch (error) {
+            console.error('AI message parse error:', error);
             parsedMessage = 'Error: Invalid AI response';
           }
           return [...prev, { ...data, message: parsedMessage }];
@@ -338,24 +342,26 @@ const Project = () => {
         .catch((error) => {
           console.error('WebContainer initialization failed:', error);
           toast.error(`WebContainer failed to initialize: ${error.message}`);
+          setIsWebContainerReady(false);
         });
     }
 
     const fetchProjectData = async () => {
       try {
         const res = await axios.get(`/projects/get-project/${project._id}`);
-        setProject(res.data.project);
+        setProject(res.data.project || {});
         setFileTree(res.data.project.fileTree || {});
         setOpenFiles([]);
         setCurrentFile(null);
       } catch (error) {
         console.error('Failed to fetch project:', error);
         toast.error('Failed to load project data');
+        setFileTree({});
       }
     };
 
     fetchProjectData();
-    axios.get('/users/all').then((res) => setUsers(res.data.users));
+    axios.get('/users/all').then((res) => setUsers(res.data.users || [])).catch((err) => console.error('Fetch users failed:', err));
 
     return () => {
       socket.off('connect');
@@ -380,7 +386,10 @@ const Project = () => {
     return axios.put('/projects/update-file-tree', {
       projectId: project._id,
       fileTree: ft,
-    }).then((res) => res.data);
+    }).then((res) => res.data).catch((err) => {
+      console.error('Save file tree error:', err);
+      throw err;
+    });
   }
 
   function scrollToBottom() {
@@ -511,7 +520,7 @@ const Project = () => {
       for (let i = 0; i < parts.length; i++) {
         const part = parts[i];
         if (i === parts.length - 1) {
-          current[part] = { file: { contents: value.file.contents } };
+          current[part] = { file: { contents: value.file?.contents || '' } };
         } else {
           current[part] = current[part] || { directory: {} };
           current = current[part].directory;
@@ -574,7 +583,7 @@ const Project = () => {
                     </div>
                   )}
                   <button
-                    onClick={() => navigator.clipboard.writeText(typeof msg.message === 'object' ? msg.message.text : msg.message)}
+                    onClick={() => navigator.clipboard.writeText(typeof msg.message === 'object' ? msg.message.text || '' : msg.message)}
                     className="p-0.5 text-gray-300 bg-gray-600 rounded-full hover:bg-indigo-500 transition-all duration-200 md:p-1"
                     aria-label="Copy Message"
                   >
@@ -584,38 +593,34 @@ const Project = () => {
               </div>
             ))}
           </div>
-          <div className="inputField w-full flex flex-col gap-1 p-1 bg-gray-850 rounded-xl shadow-inner animate-fade-in-up md:p-2 md:gap-2">
-            <div className="flex justify-end">
-              <button
-                onClick={sendToAI}
-                disabled={!message.trim()}
-                className={`p-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 ${
-                  !message.trim() ? 'opacity-50 cursor-not-allowed' : ''
-                } md:p-2`}
-                title="Send to AI"
-              >
-                <BotMessageSquare size={16} className="md:size-20" />
-              </button>
-            </div>
-            <div className="flex gap-1 md:gap-2">
-              <input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && send()}
-                className="p-1 px-2 bg-gray-800 border border-gray-700 rounded-md flex-grow focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 text-white placeholder-gray-400 text-sm md:p-2 md:px-3 md:text-base"
-                type="text"
-                placeholder="Enter message (@ai for AI response)"
-              />
-              <button
-                onClick={send}
-                disabled={!message.trim()}
-                className={`px-1 py-0.5 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 ${
-                  !message.trim() ? 'opacity-50 cursor-not-allowed' : ''
-                } md:px-2 md:py-1 md:text-base`}
-              >
-                <i className="ri-send-plane-fill text-sm md:text-base"></i>
-              </button>
-            </div>
+          <div className="inputField w-full flex flex-row items-center gap-2 p-2 bg-gray-850 rounded-xl shadow-inner animate-fade-in-up md:p-3">
+            <input
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && send()}
+              className="flex-grow p-2 px-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 text-white placeholder-gray-400 text-sm md:text-base sm:p-2 sm:px-3"
+              type="text"
+              placeholder="Enter message (@ai for AI response)"
+            />
+            <button
+              onClick={send}
+              disabled={!message.trim()}
+              className={`px-2 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 ${
+                !message.trim() ? 'opacity-50 cursor-not-allowed' : ''
+              } md:px-3 md:py-2 sm:px-2 sm:py-1`}
+            >
+              <i className="ri-send-plane-fill text-sm md:text-base sm:text-sm"></i>
+            </button>
+            <button
+              onClick={sendToAI}
+              disabled={!message.trim()}
+              className={`p-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 ${
+                !message.trim() ? 'opacity-50 cursor-not-allowed' : ''
+              } md:p-2 sm:p-1`}
+              title="Send to AI"
+            >
+              <BotMessageSquare size={16} className="md:size-20 sm:size-16" />
+            </button>
           </div>
         </div>
         <div
