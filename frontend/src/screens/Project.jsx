@@ -542,7 +542,7 @@ const Project = () => {
               } md:p-1`}
               title="Send to AI"
             >
-              <BotMessageSquare size={14} className="md:size-16" />
+              <BotMessageSquare size={12} className="md:size-14" />
             </button>
           </div>
         </div>
