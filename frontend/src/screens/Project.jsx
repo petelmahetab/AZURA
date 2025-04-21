@@ -467,14 +467,22 @@ const Project = () => {
     <main className="min-h-screen w-full flex flex-col bg-gray-900 font-sans text-white overflow-hidden">
       <section className="left flex flex-col h-full w-full bg-gradient-to-b from-gray-800 to-gray-900 shadow-lg border-r border-gray-700 md:w-1/4 lg:w-1/5">
         <header className="flex justify-between items-center p-2 bg-gray-850 shadow-md md:p-3">
-          <button
-            className="flex items-center gap-1 p-1 text-indigo-300 hover:bg-indigo-600 rounded-md transition-all duration-300 md:gap-2 md:p-2"
-            onClick={() => setIsModalOpen(true)}
-            aria-label="Add Collaborator"
-          >
-            <UsersIcon size={16} className="md:size-20" />
-            <span className="hidden md:inline text-sm font-medium">Collaborators</span>
-          </button>
+          <div className="flex items-center gap-1 md:gap-2">
+            <button
+              className="p-1 text-indigo-300 hover:bg-indigo-600 rounded-md transition-all duration-300 md:p-2"
+              onClick={() => navigate('/')}
+              title="Back to Home"
+            >
+              <i className="ri-home-4-fill text-sm md:text-base"></i>
+            </button>
+            <button
+              className="p-1 text-indigo-300 hover:bg-indigo-600 rounded-md transition-all duration-300 md:p-1"
+              onClick={() => setIsModalOpen(true)}
+              aria-label="Add Collaborator"
+            >
+              <UsersIcon size={14} className="md:size-16" />
+            </button>
+          </div>
           <div className="flex gap-1 md:gap-2">
             <button
               className="p-1 text-indigo-300 hover:bg-indigo-600 rounded-md transition-all duration-300 md:p-2"
@@ -540,10 +548,10 @@ const Project = () => {
               disabled={!message.trim()}
               className={`p-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 ${
                 !message.trim() ? 'opacity-50 cursor-not-allowed' : ''
-              } md:p-2`}
+              } md:p-1`}
               title="Send to AI"
             >
-              <BotMessageSquare size={16} className="md:size-20" />
+              <BotMessageSquare size={14} className="md:size-16" />
             </button>
           </div>
         </div>
