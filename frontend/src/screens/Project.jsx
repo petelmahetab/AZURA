@@ -203,61 +203,60 @@ const Project = () => {
     }
   };
 
-  function WriteAiMessage(message) {
-    if (typeof message === 'object' && message.text) {
-      const { text, fileTree } = message;
-      return (
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 shadow-lg transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
-          <div className="mb-4">
-            <Markdown
-              options={{ overrides: { code: { component: SyntaxHighlightedCode } } }}
-              className="text-gray-100 leading-relaxed prose prose-invert"
-            >
-              {text}
-            </Markdown>
-          </div>
-          {fileTree && Object.keys(fileTree).length > 0 && (
-            <div className="space-y-4">
-              {Object.keys(fileTree).map((fileName, index) => {
-                const { contents } = fileTree[fileName].file;
-                const language = getLanguageFromFileName(fileName);
-                return (
-                  <div
-                    key={index}
-                    className="bg-gray-850 rounded-lg p-3 border border-gray-700 hover:border-indigo-500 transition-all duration-200"
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <h3 className="text-md font-semibold text-indigo-300">{fileName}</h3>
-                      <button
-                        onClick={() => navigator.clipboard.writeText(contents)}
-                        className="p-1 text-gray-400 hover:text-indigo-300 transition-colors"
-                      >
-                        <i className="ri-file-copy-line"></i>
-                      </button>
-                    </div>
-                    <pre className="bg-gray-900 rounded-md p-2 overflow-auto text-sm">
-                      <code className={`lang-${language}`} dangerouslySetInnerHTML={{ __html: hljs.highlight(contents, { language }).value }} />
-                    </pre>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      );
-    }
+ function WriteAiMessage(message) {
+  if (typeof message === 'object' && message.text) {
+    const { text, fileTree } = message;
     return (
-      <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 shadow-lg transform transition-all duration-300 hover:scale-[1.02]">
-        <Markdown
-          options={{ overrides: { code: { component: SyntaxHighlightedCode } } }}
-          className="text-gray-100 leading-relaxed prose prose-invert"
-        >
-          {typeof message === 'string' ? message : 'Error: Unexpected message format'}
-        </Markdown>
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 shadow-lg transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+        <div className="mb-4">
+          <Markdown
+            options={{ overrides: { code: { component: SyntaxHighlightedCode } }}
+            className="text-gray-100 leading-relaxed prose prose-invert"
+          >
+            {text || 'No text response'}
+          </Markdown>
+        </div>
+        {fileTree && Object.keys(fileTree).length > 0 && (
+          <div className="space-y-4">
+            {Object.keys(fileTree).map((fileName, index) => {
+              const { contents } = fileTree[fileName].file || { contents: '' };
+              const language = getLanguageFromFileName(fileName);
+              return (
+                <div
+                  key={index}
+                  className="bg-gray-850 rounded-lg p-3 border border-gray-700 hover:border-indigo-500 transition-all duration-200"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-md font-semibold text-indigo-300">{fileName}</h3>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(contents)}
+                      className="p-1 text-gray-400 hover:text-indigo-300 transition-colors"
+                    >
+                      <i className="ri-file-copy-line"></i>
+                    </button>
+                  </div>
+                  <pre className="bg-gray-900 rounded-md p-2 overflow-auto text-sm">
+                    <code className={`lang-${language}`} dangerouslySetInnerHTML={{ __html: hljs.highlight(contents, { language }).value }} />
+                  </pre>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     );
   }
-
+  return (
+    <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 shadow-lg transform transition-all duration-300 hover:scale-[1.02]">
+      <Markdown
+        options={{ overrides: { code: { component: SyntaxHighlightedCode } }}
+        className="text-gray-100 leading-relaxed prose prose-invert"
+      >
+        {typeof message === 'string' ? message : 'Error: Unexpected message format'}
+      </Markdown>
+    </div>
+  );
+}
   const parseErrorLocation = (errorOutput) => {
     const match = errorOutput.match(/at\s+([^\s(]+):(\d+):(\d+)/);
     if (match) {
