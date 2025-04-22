@@ -684,20 +684,7 @@ const Project = () => {
                         aria-label="Rename File"
                       />
                     ) : (
-                      <button
-                        onClick={() => {
-                          setCurrentFile(file);
-                          setOpenFiles((prev) => [...new Set([...prev, file])]);
-                        }}
-                        onDoubleClick={() => startEditingFile(file)}
-                        className={`file-button w-full flex items-center gap-1 p-1 rounded-md transition-all duration-300 text-white transform hover:scale-105 shadow-sm group ${
-                          file === erroredFile ? 'bg-red-700' : 'bg-gray-750 hover:bg-indigo-700'
-                        } ${onlineUsers.has(file) ? 'border-l-4 border-green-500' : ''} md:p-2 md:gap-2`}
-                        title="Double-click to rename"
-                      >
-                        <i className="ri-file-line text-indigo-400 flex-shrink-0"></i>
-                        <span className="file-name flex-grow text-left truncate text-sm md:text-base">{file}</span>
-                        <button
+ <button
                           onClick={(e) => {
                             e.stopPropagation();
                             startEditingFile(file);
@@ -705,9 +692,7 @@ const Project = () => {
                           className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-indigo-300 transition-opacity"
                         >
                           <i className="ri-pencil-line"></i>
-                        </button>
-                      </button>
-                    )}
+                        </button>                    )}
                   </div>
                 ))}
               </div>
