@@ -605,11 +605,11 @@ const Project = () => {
             </div>
           </div>
         </div>
-        <div
+{/*         <div
           className={`sidePanel fixed top-0 left-0 w-full h-full flex flex-col bg-gray-800 shadow-2xl transition-transform duration-500 ease-in-out z-10 md:static md:w-1/4 md:translate-x-0 ${
             isSidePanelOpen ? 'translate-x-0' : '-translate-x-full'
           } md:h-auto md:border-l md:border-gray-700`}
-        >
+        > */}
 {/*           <header className="flex justify-between items-center p-2 bg-gray-850 border-b border-gray-700 text-white md:p-4">
             <h1 className="font-semibold text-lg md:text-xl">Collaborators</h1>
             <button
@@ -620,7 +620,7 @@ const Project = () => {
               <i className="ri-close-fill"></i>
             </button>
           </header> */}
-          <div className="users flex flex-col gap-1 p-2 overflow-y-auto md:gap-2 md:p-4">
+{/*           <div className="users flex flex-col gap-1 p-2 overflow-y-auto md:gap-2 md:p-4">
             <div className="online-users mb-2 md:mb-4">
               <h2 className="text-sm font-semibold text-indigo-300 mb-1 md:text-base md:mb-2">Online Collaborators</h2>
               {Array.from(onlineUsers).map(([userId, { email }], index) => (
@@ -648,7 +648,8 @@ const Project = () => {
               ))}
             </div>
           </div>
-        </div>
+        </div> */}
+        
       </section>
 
       <section className="right flex flex-col flex-grow h-full bg-gray-850 md:flex-row">
