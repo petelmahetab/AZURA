@@ -12,7 +12,7 @@ import { BotMessageSquare } from 'lucide-react';
 function SyntaxHighlightedCode(props) {
   const ref = useRef(null);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (ref.current && props.className?.includes('lang-') && window.hljs) {
       window.hljs.highlightElement(ref.current);
       ref.current.removeAttribute('data-highlighted');
@@ -81,7 +81,7 @@ const Project = () => {
   const [project, setProject] = useState(location.state?.project || {});
   const [message, setMessage] = useState('');
   const { user } = useContext(UserContext);
-  const messageBox = React.createRef();
+  const messageBox = useRef(null);
   const [users, setUsers] = useState([]);
   const [messages, setMessages] = useState([]);
   const [fileTree, setFileTree] = useState({});
@@ -133,12 +133,9 @@ const Project = () => {
     setEditingFile(null);
   };
 
-  function addCollaborators() {
+  const addCollaborators = () => {
     if (selectedUserId.size === 0) return;
-    const payload = {
-      projectId: project._id,
-      users: Array.from(selectedUserId),
-    };
+    const payload = { projectId: project._id, users: Array.from(selectedUserId) };
     axios.put('/projects/add-user', payload)
       .then((res) => {
         setProject(res.data.project || project);
@@ -146,7 +143,7 @@ const Project = () => {
         toast.success('Collaborators added!');
       })
       .catch((err) => toast.error('Failed to add collaborators'));
-  }
+  };
 
   const send = () => {
     if (!message.trim()) return;
@@ -210,7 +207,7 @@ const Project = () => {
         <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 shadow-lg transform transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
           <div className="mb-4">
             <Markdown
-              options={{ overrides: { code: { component: SyntaxHighlightedCode } } }}
+              options={{ overrides: { code: { component: SyntaxHighlightedCode } }}
               className="text-gray-100 leading-relaxed prose prose-invert"
             >
               {text}
@@ -249,7 +246,7 @@ const Project = () => {
     return (
       <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 shadow-lg transform transition-all duration-300 hover:scale-[1.02]">
         <Markdown
-          options={{ overrides: { code: { component: SyntaxHighlightedCode } } }}
+          options={{ overrides: { code: { component: SyntaxHighlightedCode } }}
           className="text-gray-100 leading-relaxed prose prose-invert"
         >
           {typeof message === 'string' ? message : 'Error: Unexpected message format'}
@@ -377,10 +374,7 @@ const Project = () => {
   }, [isWebContainerReady, isRunning, iframeUrl, webContainer]);
 
   function saveFileTree(ft) {
-    return axios.put('/projects/update-file-tree', {
-      projectId: project._id,
-      fileTree: ft,
-    }).then((res) => res.data);
+    return axios.put('/projects/update-file-tree', { projectId: project._id, fileTree: ft }).then((res) => res.data);
   }
 
   function scrollToBottom() {
@@ -523,14 +517,14 @@ const Project = () => {
 
   return (
     <main className="h-screen w-full flex flex-col bg-gray-900 font-sans overflow-hidden md:flex-row">
-      <section className="left flex flex-col h-full w-full bg-gradient-to-b from-gray-800 to-gray-900 shadow-2xl border-r border-gray-700 relative md:w-1/3">
+      <section className="left flex flex-col h-full w-full bg-gradient-to-b from-gray-800 to-gray-900 shadow-2xl border-r border-gray-700 md:w-1/3">
         <header className="flex justify-between items-center p-4 bg-gray-850 text-white shadow-md animate-fade-in-down">
           <button
             className="flex gap-2 items-center hover:bg-indigo-600 p-2 rounded-lg transition-all duration-300 transform hover:scale-105"
             onClick={() => setIsModalOpen(true)}
           >
             <i className="ri-add-fill"></i>
-            <p className="hidden md:inline">Add Collaborator</p>
+            <span className="hidden md:inline">Add Collaborator</span>
           </button>
           <div className="flex gap-2">
             <button
@@ -539,13 +533,6 @@ const Project = () => {
               title="Back to Home"
             >
               <i className="ri-home-4-fill"></i>
-            </button>
-            <button
-              className="p-2 hover:bg-indigo-600 rounded-lg transition-all duration-300 transform hover:scale-110 md:hidden"
-              onClick={() => setIsSidePanelOpen(!isSidePanelOpen)}
-              aria-label="Toggle Collaborators Panel"
-            >
-              <i className="ri-group-fill"></i>
             </button>
           </div>
         </header>
