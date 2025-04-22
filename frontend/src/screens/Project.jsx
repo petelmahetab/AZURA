@@ -77,6 +77,7 @@ const Project = () => {
   const navigate = useNavigate();
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCodeEditorOpen, setIsCodeEditorOpen] = useState(false); // New state for mobile code editor toggle
   const [selectedUserId, setSelectedUserId] = useState(new Set());
   const [project, setProject] = useState(location.state?.project || {});
   const [message, setMessage] = useState('');
@@ -157,7 +158,7 @@ const Project = () => {
   const sendToAI = async () => {
     if (!message.trim()) return;
     const aiMessage = message.startsWith('@ai') ? message : `@ai ${message}`;
-    const timestamp = new Date().toLocaleTimeString();
+    const timestamp = new -new Date().toLocaleTimeString();
     const messageData = { message: aiMessage, sender: user, timestamp };
     sendMessage('project-message', messageData);
     setMessages((prev) => [...prev, messageData]);
@@ -541,6 +542,13 @@ const Project = () => {
             >
               <i className="ri-team-line"></i>
             </button>
+            <button
+              className="p-2 hover:bg-indigo-600 rounded-lg transition-all duration-300 transform hover:scale-110 md:hidden"
+              onClick={() => setIsCodeEditorOpen(!isCodeEditorOpen)}
+              title={isCodeEditorOpen ? 'Hide Code Editor' : 'Show Code Editor'}
+            >
+              <i className="ri-code-line"></i>
+            </button>
           </div>
         </header>
         <div className="conversation-area flex-grow flex flex-col p-4 overflow-hidden">
@@ -658,7 +666,11 @@ const Project = () => {
         </div>
       </section>
 
-      <section className="right flex flex-col flex-grow h-full bg-gray-850 md:flex-row">
+      <section
+        className={`right flex flex-col flex-grow w-full bg-gray-850 transition-all duration-300 ease-in-out ${
+          isCodeEditorOpen ? 'block' : 'hidden'
+        } md:flex md:flex-row md:h-full md:block`}
+      >
         <div
           className={`explorer w-full h-1/4 bg-gray-800 shadow-md border-r border-gray-700 animate-slide-in-left md:w-64 md:h-full ${
             isFileExplorerOpen ? 'block' : 'hidden md:block'
@@ -835,29 +847,4 @@ const Project = () => {
               {users.map((user, index) => (
                 <div
                   key={user._id || `user-${index}`}
-                  className={`flex gap-1 items-center p-1 cursor-pointer hover:bg-gray-700 rounded-md transition-all duration-300 transform hover:scale-105 ${
-                    selectedUserId.has(user._id) ? 'bg-indigo-700' : ''
-                  } md:gap-2 md:p-2`}
-                  onClick={() => handleUserClick(user._id)}
-                >
-                  <div className="w-6 h-6 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-md md:w-10 md:h-10">
-                    <i className="ri-user-fill"></i>
-                  </div>
-                  <h1 className="font-semibold text-white text-sm truncate md:text-base">{user.email}</h1>
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={addCollaborators}
-              className="mt-2 w-full py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 transform hover:scale-105 shadow-md text-sm md:mt-4 md:py-2 md:text-base"
-            >
-              Add Collaborators
-            </button>
-          </div>
-        </div>
-      )}
-    </main>
-  );
-};
-
-export default Project;
+                  className={`flex gap-1 items-center p-1 cursor-pointer hover:bg-gray-700 rounded-md transition
