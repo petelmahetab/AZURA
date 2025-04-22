@@ -1,3 +1,5 @@
+
+//one
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import { UserContext } from '../context/user.context';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -613,9 +615,9 @@ const Project = () => {
           </div>
         </div>
         <div
-          className={`sidePanel fixed top-0 left-0 w-full h-full flex flex-col bg-gray-800 shadow-2xl transition-transform duration-500 ease-in-out z-10 md:static md:w-1/4 md:translate-x-0 ${
+          className={`sidePanel fixed top-0 left-0 w-full h-full flex flex-col bg-gray-800 shadow-2xl transition-transform duration-500 ease-in-out z-10 md:static md:w-1/4 md:h-auto md:border-l md:border-gray-700 ${
             isSidePanelOpen ? 'translate-x-0' : '-translate-x-full'
-          } md:h-auto md:border-l md:border-gray-700`}
+          }`}
         >
           <header className="flex justify-between items-center p-2 bg-gray-850 border-b border-gray-700 text-white md:p-4">
             <h1 className="font-semibold text-lg md:text-xl">Collaborators</h1>
@@ -676,9 +678,9 @@ const Project = () => {
               </button>
             </div>
             {Object.keys(fileTree).length > 0 ? (
-              <div className="file-list space-y-1 md:space-y-2">
+              <div className="file-list flex flex-row gap-2 overflow-x-auto md:flex-wrap md:gap-2">
                 {Object.keys(fileTree).map((file, index) => (
-                  <div key={index} className="flex items-center gap-1 md:gap-2">
+                  <div key={index} className="flex items-center">
                     {editingFile === file ? (
                       <input
                         type="text"
@@ -697,13 +699,13 @@ const Project = () => {
                           setOpenFiles((prev) => [...new Set([...prev, file])]);
                         }}
                         onDoubleClick={() => startEditingFile(file)}
-                        className={`file-button w-full flex items-center gap-1 p-1 rounded-md transition-all duration-300 text-white transform hover:scale-105 shadow-sm group ${
+                        className={`file-button flex items-center gap-1 p-1 rounded-md transition-all duration-300 text-white transform hover:scale-105 shadow-sm group ${
                           file === erroredFile ? 'bg-red-700' : 'bg-gray-750 hover:bg-indigo-700'
                         } ${onlineUsers.has(file) ? 'border-l-4 border-green-500' : ''} md:p-2 md:gap-2`}
                         title="Double-click to rename"
                       >
                         <i className="ri-file-line text-indigo-400 flex-shrink-0"></i>
-                        <span className="file-name flex-grow text-left truncate text-sm md:text-base">{file}</span>
+                        <span className="file-name text-left truncate text-sm md:text-base">{file}</span>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -821,7 +823,7 @@ const Project = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center animate-fade-in">
-          <div className="bg-gray-800 p-4 rounded-xl w-11/12 max-w-md shadow-2xl transform transition-all duration-300 scale-95 hover:scale-100 md:p-6 md:w-96">
+          <div className="bg-gray-850 p-4 rounded-xl w-11/12 max-w-md shadow-2xl transform transition-all duration-300 scale-95 hover:scale-100 md:p-6 md:w-96">
             <header className="flex justify-between items-center mb-2 md:mb-4">
               <h2 className="text-lg font-semibold text-indigo-300 md:text-xl">Select User</h2>
               <button
