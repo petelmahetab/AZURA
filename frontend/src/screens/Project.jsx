@@ -610,7 +610,7 @@ const Project = () => {
             isSidePanelOpen ? 'translate-x-0' : '-translate-x-full'
           } md:h-auto md:border-l md:border-gray-700`}
         >
-          <header className="flex justify-between items-center p-2 bg-gray-850 border-b border-gray-700 text-white md:p-4">
+{/*           <header className="flex justify-between items-center p-2 bg-gray-850 border-b border-gray-700 text-white md:p-4">
             <h1 className="font-semibold text-lg md:text-xl">Collaborators</h1>
             <button
               className="p-2 hover:bg-indigo-600 rounded-lg transition-all duration-300 transform hover:scale-110"
@@ -619,7 +619,7 @@ const Project = () => {
             >
               <i className="ri-close-fill"></i>
             </button>
-          </header>
+          </header> */}
           <div className="users flex flex-col gap-1 p-2 overflow-y-auto md:gap-2 md:p-4">
             <div className="online-users mb-2 md:mb-4">
               <h2 className="text-sm font-semibold text-indigo-300 mb-1 md:text-base md:mb-2">Online Collaborators</h2>
