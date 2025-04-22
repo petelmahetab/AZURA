@@ -517,7 +517,7 @@ const Project = () => {
 
   return (
     <main className="h-screen w-full flex flex-col bg-gray-900 font-sans overflow-hidden md:flex-row">
-      <section className="left flex flex-col h-full w-full bg-gradient-to-b from-gray-800 to-gray-900 shadow-2xl border-r border-gray-700 md:w-1/3">
+      <section className="left relative flex flex-col h-full w-full bg-gradient-to-b from-gray-800 to-gray-900 shadow-2xl border-r border-gray-700 md:w-1/3">
         <header className="flex justify-between items-center p-4 bg-gray-850 text-white shadow-md animate-fade-in-down">
           <button
             className="flex gap-2 items-center hover:bg-indigo-600 p-2 rounded-lg transition-all duration-300 transform hover:scale-105"
@@ -540,7 +540,7 @@ const Project = () => {
               title="Show Collaborators"
             >
               <i className="ri-team-line"></i>
-</button>
+            </button>
           </div>
         </header>
         <div className="conversation-area flex-grow flex flex-col p-4 overflow-hidden">
@@ -612,12 +612,12 @@ const Project = () => {
             </div>
           </div>
         </div>
-{/*         <div
-          className={`sidePanel fixed top-0 left-0 w-full h-full flex flex-col bg-gray-800 shadow-2xl transition-transform duration-500 ease-in-out z-10 md:static md:w-1/4 md:translate-x-0 ${
+        <div
+          className={`sidePanel absolute top-0 left-0 w-full h-full flex flex-col bg-gray-800 shadow-2xl transition-transform duration-500 ease-in-out z-20 ${
             isSidePanelOpen ? 'translate-x-0' : '-translate-x-full'
-          } md:h-auto md:border-l md:border-gray-700`}
-        > */}
-{/*           <header className="flex justify-between items-center p-2 bg-gray-850 border-b border-gray-700 text-white md:p-4">
+          } md:w-full md:h-full`}
+        >
+          <header className="flex justify-between items-center p-2 bg-gray-850 border-b border-gray-700 text-white md:p-4">
             <h1 className="font-semibold text-lg md:text-xl">Collaborators</h1>
             <button
               className="p-2 hover:bg-indigo-600 rounded-lg transition-all duration-300 transform hover:scale-110"
@@ -626,8 +626,8 @@ const Project = () => {
             >
               <i className="ri-close-fill"></i>
             </button>
-          </header> */}
-{/*           <div className="users flex flex-col gap-1 p-2 overflow-y-auto md:gap-2 md:p-4">
+          </header>
+          <div className="users flex flex-col gap-1 p-2 overflow-y-auto md:gap-2 md:p-4">
             <div className="online-users mb-2 md:mb-4">
               <h2 className="text-sm font-semibold text-indigo-300 mb-1 md:text-base md:mb-2">Online Collaborators</h2>
               {Array.from(onlineUsers).map(([userId, { email }], index) => (
@@ -655,8 +655,7 @@ const Project = () => {
               ))}
             </div>
           </div>
-        </div> */}
-        
+        </div>
       </section>
 
       <section className="right flex flex-col flex-grow h-full bg-gray-850 md:flex-row">
@@ -697,7 +696,7 @@ const Project = () => {
                           setCurrentFile(file);
                           setOpenFiles((prev) => [...new Set([...prev, file])]);
                         }}
-                        onDoubleClick={() => startEditingFile(file)} // Fixed here
+                        onDoubleClick={() => startEditingFile(file)}
                         className={`file-button w-full flex items-center gap-1 p-1 rounded-md transition-all duration-300 text-white transform hover:scale-105 shadow-sm group ${
                           file === erroredFile ? 'bg-red-700' : 'bg-gray-750 hover:bg-indigo-700'
                         } ${onlineUsers.has(file) ? 'border-l-4 border-green-500' : ''} md:p-2 md:gap-2`}
