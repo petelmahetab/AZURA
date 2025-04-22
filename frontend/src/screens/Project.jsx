@@ -465,228 +465,238 @@ const Project = () => {
 
   return (
     <main className="min-h-screen w-full flex flex-col bg-gray-900 font-sans text-white overflow-hidden">
-      <header className="flex justify-between items-center p-2 bg-gray-850 shadow-md md:p-3">
-        <div className="flex items-center gap-1 md:gap-2">
-          <button
-            className="p-1 text-indigo-300 hover:bg-indigo-600 rounded-md transition-all duration-300 md:p-2"
-            onClick={() => navigate('/')}
-            title="Back to Home"
-          >
-            <i className="ri-home-4-fill text-sm md:text-base"></i>
-          </button>
-          <button
-            className="p-1 text-indigo-300 hover:bg-indigo-600 rounded-md transition-all duration-300 md:p-1"
-            onClick={() => setIsModalOpen(true)}
-            aria-label="Add Collaborator"
-          >
-            <UsersIcon size={14} className="md:size-16" />
-          </button>
-        </div>
-      </header>
-      <div className="flex flex-col md:flex-row h-full">
-        <section className="left flex flex-col w-full md:w-1/4 bg-gradient-to-b from-gray-800 to-gray-900 shadow-lg border-r border-gray-700 md:h-full">
-          <div className="conversation-area flex-grow flex flex-col p-2 overflow-hidden md:p-3">
-            <div ref={messageBox} className="message-box flex-grow flex flex-col gap-2 overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-gray-800">
-              {messages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`message flex flex-col p-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
-                    msg.sender._id === 'ai'
-                      ? 'max-w-[90%] bg-gradient-to-br from-indigo-800 to-gray-900'
-                      : `max-w-[80%] sm:max-w-60 bg-gray-700 ${msg.sender._id === user._id.toString() ? 'ml-auto' : ''}`
-                  }`}
-                >
-                  <small className="opacity-70 text-xs mb-1">{msg.sender.email}</small>
-                  <div className="text-sm flex items-center gap-2">
-                    {msg.sender._id === 'ai' ? (
-                      WriteAiMessage(msg.message)
-                    ) : (
-                      <div className="flex flex-col flex-grow">
-                        <p className="break-words pr-4">{msg.message}</p>
-                        <span className="text-xs opacity-50 mt-1 self-end">{msg.timestamp}</span>
-                      </div>
-                    )}
-                    <button
-                      onClick={() => navigator.clipboard.writeText(typeof msg.message === 'object' ? msg.message.text || '' : msg.message)}
-                      className="p-1 text-gray-300 bg-gray-600 rounded-full hover:bg-indigo-500 transition-all"
-                      aria-label="Copy Message"
-                    >
-                      <i className="ri-file-copy-line text-sm"></i>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="input-field flex items-center gap-2 p-2 bg-gray-850 rounded-xl shadow-inner md:p-3">
-              <input
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && send()}
-                className="flex-grow p-2 px-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-400 text-sm md:text-base"
-                type="text"
-                placeholder="Enter message (@ai for AI response)"
-              />
-              <button
-                onClick={send}
-                disabled={!message.trim()}
-                className={`px-2 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 ${
-                  !message.trim() ? 'opacity-50 cursor-not-allowed' : ''
-                } md:px-3 md:py-2`}
-              >
-                <i className="ri-send-plane-fill text-sm md:text-base"></i>
-              </button>
-              <button
-                onClick={sendToAI}
-                disabled={!message.trim()}
-                className={`p-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 ${
-                  !message.trim() ? 'opacity-50 cursor-not-allowed' : ''
-                } md:p-1`}
-                title="Send to AI"
-              >
-                <BotMessageSquare size={14} className="md:size-16" />
-              </button>
-            </div>
+      <section className="left flex flex-col h-full w-full bg-gradient-to-b from-gray-800 to-gray-900 shadow-lg border-r border-gray-700 md:w-1/4 lg:w-1/5">
+        <header className="flex justify-between items-center p-2 bg-gray-850 shadow-md md:p-3">
+          <div className="flex items-center gap-1 md:gap-2">
+            <button
+              className="p-1 text-indigo-300 hover:bg-indigo-600 rounded-md transition-all duration-300 md:p-2"
+              onClick={() => navigate('/')}
+              title="Back to Home"
+            >
+              <i className="ri-home-4-fill text-sm md:text-base"></i>
+            </button>
+            <button
+              className="p-1 text-indigo-300 hover:bg-indigo-600 rounded-md transition-all duration-300 md:p-1"
+              onClick={() => setIsModalOpen(true)}
+              aria-label="Add Collaborator"
+            >
+              <UsersIcon size={14} className="md:size-16" />
+            </button>
           </div>
-        </section>
-        <section className="right flex flex-col flex-grow h-full bg-gray-850">
-          <div className="explorer w-full bg-gray-800 shadow-md border-r border-gray-700 md:w-64">
-            <div className="file-tree w-full p-2">
-              <div className="flex justify-between items-center mb-2">
-                <h2 className="text-lg font-semibold text-indigo-300">Files</h2>
-              </div>
-              {Object.keys(fileTree).length > 0 ? (
-                <div className="file-list space-y-1">
-                  {Object.keys(fileTree).map((file, index) => (
-                    <div key={index} className="flex items-center">
-                      {editingFile === file ? (
-                        <input
-                          type="text"
-                          value={newFileName}
-                          onChange={(e) => setNewFileName(e.target.value)}
-                          onBlur={() => handleFileRename(file)}
-                          onKeyPress={(e) => e.key === 'Enter' && handleFileRename(file)}
-                          className="w-full p-1 bg-gray-700 text-white rounded-md border border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
-                          autoFocus
-                          aria-label="Rename File"
-                        />
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setCurrentFile(file);
-                            setOpenFiles((prev) => [...new Set([...prev, file])]);
-                          }}
-                          onDoubleClick={() => startEditingFile(file)}
-                          className={`file-button w-full flex items-center gap-1 p-1 rounded-md transition-all duration-300 text-white hover:bg-indigo-700 shadow-sm ${
-                            file === erroredFile ? 'bg-red-700' : 'bg-gray-750'
-                          } ${onlineUsers.has(file) ? 'border-l-4 border-green-500' : ''}`}
-                          title="Double-click to rename"
-                        >
-                          <i className="ri-file-line text-indigo-400 text-sm flex-shrink-0"></i>
-                          <span className="file-name flex-grow text-left truncate text-sm">{file}</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              startEditingFile(file);
-                            }}
-                            className="opacity-0 hover:opacity-100 text-gray-400 hover:text-indigo-300 transition-opacity"
-                          >
-                            <i className="ri-pencil-line text-sm"></i>
-                          </button>
-                        </button>
-                      )}
+          <div className="flex gap-1 md:gap-2">
+            <button
+              className="p-1 text-indigo-300 hover:bg-indigo-600 rounded-md transition-all duration-300 md:p-2"
+              onClick={() => navigate('/')}
+              title="Back to Home"
+            >
+              <i className="ri-home-4-fill text-sm md:text-base"></i>
+            </button>
+          </div>
+        </header>
+        <div className="conversation-area flex-grow flex flex-col p-2 overflow-hidden md:p-3">
+          <div ref={messageBox} className="message-box flex-grow flex flex-col gap-2 overflow-y-auto scrollbar-thin scrollbar-thumb-indigo-500 scrollbar-track-gray-800">
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`message flex flex-col p-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 ${
+                  msg.sender._id === 'ai'
+                    ? 'max-w-[90%] bg-gradient-to-br from-indigo-800 to-gray-900'
+                    : `max-w-[80%] sm:max-w-60 bg-gray-700 ${msg.sender._id === user._id.toString() ? 'ml-auto' : ''}`
+                }`}
+              >
+                <small className="opacity-70 text-xs mb-1">{msg.sender.email}</small>
+                <div className="text-sm flex items-center gap-2">
+                  {msg.sender._id === 'ai' ? (
+                    WriteAiMessage(msg.message)
+                  ) : (
+                    <div className="flex flex-col flex-grow">
+                      <p className="break-words pr-4">{msg.message}</p>
+                      <span className="text-xs opacity-50 mt-1 self-end">{msg.timestamp}</span>
                     </div>
-                  ))}
+                  )}
+                  <button
+                    onClick={() => navigator.clipboard.writeText(typeof msg.message === 'object' ? msg.message.text || '' : msg.message)}
+                    className="p-1 text-gray-300 bg-gray-600 rounded-full hover:bg-indigo-500 transition-all"
+                    aria-label="Copy Message"
+                  >
+                    <i className="ri-file-copy-line text-sm"></i>
+                  </button>
                 </div>
-              ) : (
-                <p className="text-gray-400 italic text-sm">No files yet</p>
-              )}
-            </div>
+              </div>
+            ))}
           </div>
-          <div className="code-editor flex flex-col flex-grow h-[calc(100%-64px)] bg-gray-900 shadow-inner">
-            <div className="top flex justify-between items-center p-1 bg-gray-850 border-b border-gray-700 min-h-[40px]">
-              <div className="files flex flex-row overflow-x-auto space-x-1">
-                {openFiles.map((file, index) => (
-                  <div key={index} className="flex items-center bg-gray-800 rounded-t-md shadow-sm">
-                    <button
-                      onClick={() => setCurrentFile(file)}
-                      className={`p-1 px-2 flex items-center gap-1 text-white font-medium transition-all duration-300 ${
-                        currentFile === file ? 'bg-indigo-600 border-t-2 border-indigo-400' : 'hover:bg-gray-700'
-                      } text-sm`}
-                    >
-                      <span>{file}</span>
-                    </button>
-                    <button
-                      onClick={() => closeFile(file)}
-                      className="p-1 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-r-md transition-all"
-                    >
-                      <i className="ri-close-line text-sm"></i>
-                    </button>
+          <div className="input-field flex items-center gap-2 p-2 bg-gray-850 rounded-xl shadow-inner md:p-3">
+            <input
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && send()}
+              className="flex-grow p-2 px-3 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-400 text-sm md:text-base"
+              type="text"
+              placeholder="Enter message (@ai for AI response)"
+            />
+            <button
+              onClick={send}
+              disabled={!message.trim()}
+              className={`px-2 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 ${
+                !message.trim() ? 'opacity-50 cursor-not-allowed' : ''
+              } md:px-3 md:py-2`}
+            >
+              <i className="ri-send-plane-fill text-sm md:text-base"></i>
+            </button>
+            <button
+              onClick={sendToAI}
+              disabled={!message.trim()}
+              className={`p-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 ${
+                !message.trim() ? 'opacity-50 cursor-not-allowed' : ''
+              } md:p-1`}
+              title="Send to AI"
+            >
+              <BotMessageSquare size={14} className="md:size-16" />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="right flex flex-col flex-grow h-full bg-gray-850">
+        <div className="explorer w-full bg-gray-800 shadow-md border-r border-gray-700 md:w-64">
+          <div className="file-tree w-full p-2">
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-lg font-semibold text-indigo-300">Files</h2>
+            </div>
+            {Object.keys(fileTree).length > 0 ? (
+              <div className="file-list space-y-1">
+                {Object.keys(fileTree).map((file, index) => (
+                  <div key={index} className="flex items-center">
+                    {editingFile === file ? (
+                      <input
+                        type="text"
+                        value={newFileName}
+                        onChange={(e) => setNewFileName(e.target.value)}
+                        onBlur={() => handleFileRename(file)}
+                        onKeyPress={(e) => e.key === 'Enter' && handleFileRename(file)}
+                        className="w-full p-1 bg-gray-700 text-white rounded-md border border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-400 text-sm"
+                        autoFocus
+                        aria-label="Rename File"
+                      />
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setCurrentFile(file);
+                          setOpenFiles((prev) => [...new Set([...prev, file])]);
+                        }}
+                        onDoubleClick={() => startEditingFile(file)}
+                        className={`file-button w-full flex items-center gap-1 p-1 rounded-md transition-all duration-300 text-white hover:bg-indigo-700 shadow-sm ${
+                          file === erroredFile ? 'bg-red-700' : 'bg-gray-750'
+                        } ${onlineUsers.has(file) ? 'border-l-4 border-green-500' : ''}`}
+                        title="Double-click to rename"
+                      >
+                        <i className="ri-file-line text-indigo-400 text-sm flex-shrink-0"></i>
+                        <span className="file-name flex-grow text-left truncate text-sm">{file}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditingFile(file);
+                          }}
+                          className="opacity-0 hover:opacity-100 text-gray-400 hover:text-indigo-300 transition-opacity"
+                        >
+                          <i className="ri-pencil-line text-sm"></i>
+                        </button>
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
-              <div className="actions flex gap-1 p-1 min-w-[120px]">
-                <button
-                  onClick={runServer}
-                  disabled={!isWebContainerReady || isRunning}
-                  className={`px-2 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 shadow-md ${
-                    !isWebContainerReady || isRunning ? 'opacity-50 cursor-not-allowed' : ''
-                  } text-sm`}
-                >
-                  {isRunning ? 'Running...' : 'Run'}
-                </button>
-                {iframeUrl && webContainer && (
+            ) : (
+              <p className="text-gray-400 italic text-sm">No files yet</p>
+            )}
+          </div>
+        </div>
+
+        <div className="code-editor flex flex-col flex-grow h-[calc(100%-64px)] bg-gray-900 shadow-inner">
+          <div className="top flex justify-between items-center p-1 bg-gray-850 border-b border-gray-700 min-h-[40px]">
+            <div className="files flex-1 overflow-x-auto flex-nowrap space-x-1">
+              {openFiles.map((file, index) => (
+                <div key={index} className="flex items-center bg-gray-800 rounded-t-md shadow-sm">
                   <button
-                    onClick={() => {
-                      setIframeUrl(null);
-                      if (runProcess) runProcess.kill();
-                      setIsRunning(false);
-                    }}
-                    className="px-2 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all duration-300 shadow-md text-sm"
+                    onClick={() => setCurrentFile(file)}
+                    className={`p-1 px-2 flex items-center gap-1 text-white font-medium transition-all duration-300 ${
+                      currentFile === file ? 'bg-indigo-600 border-t-2 border-indigo-400' : 'hover:bg-gray-700'
+                    } text-sm`}
                   >
-                    Stop Server
+                    <span>{file}</span>
                   </button>
-                )}
-              </div>
+                  <button
+                    onClick={() => closeFile(file)}
+                    className="p-1 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-r-md transition-all"
+                  >
+                    <i className="ri-close-line text-sm"></i>
+                  </button>
+                </div>
+              ))}
             </div>
-            <div className="editor-and-terminal flex flex-col h-full">
-              <div className="editor flex-1 overflow-y-auto custom-scrollbar">
-                {currentFile && fileTree[currentFile] ? (
-                  <CodeEditorArea fileTree={fileTree} currentFile={currentFile} setFileTree={setFileTree} saveFileTree={saveFileTree} />
-                ) : (
-                  <div className="h-full flex items-center justify-center bg-gray-900">
-                    <h1 className="text-2xl font-bold text-indigo-400 animate-pulse tracking-wide">Code Nexus</h1>
-                  </div>
-                )}
-              </div>
-              <div className="terminal h-1/4 bg-gray-800 border-t border-gray-700 p-1 overflow-y-auto custom-scrollbar">
-                <h3 className="text-sm font-semibold text-indigo-300 mb-1">Output</h3>
-                <pre className="text-white text-sm whitespace-pre-wrap">{output || ' '}</pre>
-                {output.includes('Error') && (
-                  <div className="error-panel bg-red-900 text-white p-1 rounded-md mt-1">
-                    <h3 className="font-bold text-sm">Error Details</h3>
-                    <pre className="text-sm">{output}</pre>
-                    <p className="mt-1 text-sm">Fix the error in the code and click "Run" again to retry.</p>
-                  </div>
-                )}
-              </div>
+            <div className="actions flex gap-1 p-1 min-w-[120px]">
+              <button
+                onClick={runServer}
+                disabled={!isWebContainerReady || isRunning}
+                className={`px-2 py-1 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-all duration-300 shadow-md ${
+                  !isWebContainerReady || isRunning ? 'opacity-50 cursor-not-allowed' : ''
+                } text-sm`}
+              >
+                {isRunning ? 'Running...' : 'Run'}
+              </button>
+              {iframeUrl && webContainer && (
+                <button
+                  onClick={() => {
+                    setIframeUrl(null);
+                    if (runProcess) runProcess.kill();
+                    setIsRunning(false);
+                  }}
+                  className="px-2 py-1 bg-red-600 text-white rounded-md hover:bg-red-700 transition-all duration-300 shadow-md text-sm"
+                >
+                  Stop Server
+                </button>
+              )}
             </div>
           </div>
-          {iframeUrl && webContainer && (
-            <div className="w-full h-1/3 bg-gray-800 shadow-md border-l border-gray-700 md:w-1/2 lg:w-2/5">
-              <div className="address-bar p-1 bg-gray-850">
-                <input
-                  type="text"
-                  onChange={(e) => setIframeUrl(e.target.value)}
-                  sandbox="allow-scripts allow-same-origin"
-                  value={iframeUrl}
-                  className="w-full p-1 bg-black text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                />
-              </div>
-              <iframe src={iframeUrl} className="w-full h-[calc(100%-32px)] border-0" />
+          <div className="editor-and-terminal flex flex-col h-full">
+            <div className="editor flex-1 overflow-y-auto custom-scrollbar">
+              {currentFile && fileTree[currentFile] ? (
+                <CodeEditorArea fileTree={fileTree} currentFile={currentFile} setFileTree={setFileTree} saveFileTree={saveFileTree} />
+              ) : (
+                <div className="h-full flex items-center justify-center bg-gray-900">
+                  <h1 className="text-2xl font-bold text-indigo-400 animate-pulse tracking-wide">Code Nexus</h1>
+                </div>
+              )}
             </div>
-          )}
-        </section>
-      </div>
+            <div className="terminal h-1/4 bg-gray-800 border-t border-gray-700 p-1 overflow-y-auto custom-scrollbar">
+              <h3 className="text-sm font-semibold text-indigo-300 mb-1">Output</h3>
+              <pre className="text-white text-sm whitespace-pre-wrap">{output || ' '}</pre>
+              {output.includes('Error') && (
+                <div className="error-panel bg-red-900 text-white p-1 rounded-md mt-1">
+                  <h3 className="font-bold text-sm">Error Details</h3>
+                  <pre className="text-sm">{output}</pre>
+                  <p className="mt-1 text-sm">Fix the error in the code and click "Run" again to retry.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {iframeUrl && webContainer && (
+          <div className="w-full h-1/3 bg-gray-800 shadow-md border-l border-gray-700 md:w-1/2 lg:w-2/5">
+            <div className="address-bar p-1 bg-gray-850">
+              <input
+                type="text"
+                onChange={(e) => setIframeUrl(e.target.value)}
+                sandbox="allow-scripts allow-same-origin"
+                value={iframeUrl}
+                className="w-full p-1 bg-black text-white border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
+              />
+            </div>
+            <iframe src={iframeUrl} className="w-full h-[calc(100%-32px)] border-0" />
+          </div>
+        )}
+      </section>
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 animate-fade-in">
